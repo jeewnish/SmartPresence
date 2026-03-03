@@ -2,70 +2,70 @@ SmartPresence is a Fingerprint-First, Multi-Modal Biometric Attendance & Analyti
 
 This system integrates biometric authentication, indoor location verification, and cloud-based analytics to create a secure, scalable, and intelligent attendance ecosystem.
 
-Project Overview
+📌 Project Overview
 
-1.Traditional attendance systems suffer from:
+Traditional attendance systems suffer from:
 
-2.Proxy attendance
+Proxy attendance
 
-3.Manual errors
+Manual errors
 
-4.Lack of indoor location accuracy
+Lack of indoor location accuracy
 
-5.No real-time analytics
+No real-time analytics
 
 SmartPresence solves these problems using:
 
-1.Fingerprint authentication
+Fingerprint authentication
 
-2.Facial recognition backup
+Facial recognition backup
 
-3. Beacon indoor verification
+BLE Beacon indoor verification
 
-4.GPS geofencing
+GPS geofencing
 
-5.Real-time analytics dashboard
+Real-time analytics dashboard
 
-Objectives
+🎯 Objectives
 
-1.Maximize accessibility using smartphone fingerprint sensors
+Maximize accessibility using smartphone fingerprint sensors
 
-2.Prevent proxy attendance using multi-modal biometric verification
+Prevent proxy attendance using multi-modal biometric verification
 
-3.Ensure room-level indoor accuracy using BLE Beacons
+Ensure room-level indoor accuracy using BLE Beacons
 
-4.Maintain sub-3-second verification performance
+Maintain sub-3-second verification performance
 
-5.Provide real-time administrative insights and anomaly alerts
+Provide real-time administrative insights and anomaly alerts
 
-System Architecture
-#Backend
+🏗 System Architecture
+Backend
 
-1.Java (JDK 21+)
+Java (JDK 21+)
 
-2.Spring Boot 3
+Spring Boot 3
 
-3.Spring Security
+Spring Security
 
-4.PostgreSQL / MySQL
+PostgreSQL / MySQL
 
-4.RESTful APIs
+RESTful APIs
 
-#Mobile Application
+Mobile Application
 
-1.React Native
+React Native
 
-2.Native Biometric SDKs (Fingerprint / Face)
+Native Biometric SDKs (Fingerprint / Face)
 
-3.BLE Integration
+BLE Integration
 
-4.GPS Geofencing
+GPS Geofencing
 
-#Cloud & Integrations
+Cloud & Integrations
 
-1.AWS / Azure SDK
+AWS / Azure SDK
 
-2.Optional Cloud AI APIs for facial recognition
+Optional Cloud AI APIs for facial recognition
 
 🔐 Core Features
 1️⃣ Multi-Modal Biometric Verification
@@ -162,3 +162,15 @@ Git
 Postman
 
 Figma
+
+🚀 Future Enhancements
+
+AI-based attendance pattern prediction
+
+Advanced behavioral analytics
+
+Multi-institution support
+
+Integration with LMS platforms
+
+(This project is developed as part of the IS 4110 Capstone Project.)
