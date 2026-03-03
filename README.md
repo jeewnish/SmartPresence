@@ -4,68 +4,69 @@ This system integrates biometric authentication, indoor location verification, a
 
 📌 Project Overview
 
-Traditional attendance systems suffer from:
+1. Traditional attendance systems suffer from:
 
-Proxy attendance
+2. Proxy attendance
 
-Manual errors
+3. Manual errors
 
-Lack of indoor location accuracy
+4. Lack of indoor location accuracy
 
-No real-time analytics
+5. No real-time analytics
 
 SmartPresence solves these problems using:
 
-Fingerprint authentication
+1. Fingerprint authentication
 
-Facial recognition backup
+2. Facial recognition backup
 
-BLE Beacon indoor verification
+3. BLE Beacon indoor verification
 
-GPS geofencing
+4. GPS geofencing
 
-Real-time analytics dashboard
+5. Real-time analytics dashboard
 
 🎯 Objectives
 
-Maximize accessibility using smartphone fingerprint sensors
+1. Maximize accessibility using smartphone fingerprint sensors
 
-Prevent proxy attendance using multi-modal biometric verification
+2. Prevent proxy attendance using multi-modal biometric verification
 
-Ensure room-level indoor accuracy using BLE Beacons
+3. Ensure room-level indoor accuracy using BLE Beacons
 
-Maintain sub-3-second verification performance
+4. Maintain sub-3-second verification performance
 
-Provide real-time administrative insights and anomaly alerts
+5. Provide real-time administrative insights and anomaly alerts
 
 🏗 System Architecture
+
 Backend
 
-Java (JDK 21+)
+* Java (JDK 21+)
 
-Spring Boot 3
+* Spring Boot 3
 
-Spring Security
+* Spring Security
 
-PostgreSQL / MySQL
+* PostgreSQL / MySQL
 
-RESTful APIs
+* RESTful APIs
 
 Mobile Application
 
-React Native
+* React Native
 
-Native Biometric SDKs (Fingerprint / Face)
+* Native Biometric SDKs (Fingerprint / Face)
 
-BLE Integration
+* BLE Integration
 
-GPS Geofencing
+* GPS Geofencing
 
 Cloud & Integrations
 
-AWS / Azure SDK
+* AWS / Azure SDK
 
-Optional Cloud AI APIs for facial recognition
+* Optional Cloud AI APIs for facial recognition
 
 🔐 Core Features
 1️⃣ Multi-Modal Biometric Verification
