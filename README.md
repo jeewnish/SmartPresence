@@ -22,9 +22,7 @@ SmartPresence solves these problems using:
 
 3. BLE Beacon indoor verification
 
-4. GPS geofencing
-
-5. Real-time analytics dashboard
+4. Real-time analytics dashboard
 
 🎯 Objectives
 
@@ -37,36 +35,6 @@ SmartPresence solves these problems using:
 4. Maintain sub-3-second verification performance
 
 5. Provide real-time administrative insights and anomaly alerts
-
-🏗 System Architecture
-
-Backend
-
-* Java (JDK 21+)
-
-* Spring Boot 3
-
-* Spring Security
-
-* PostgreSQL / MySQL
-
-* RESTful APIs
-
-Mobile Application
-
-* React Native
-
-* Native Biometric SDKs (Fingerprint / Face)
-
-* BLE Integration
-
-* GPS Geofencing
-
-Cloud & Integrations
-
-* AWS / Azure SDK
-
-* Optional Cloud AI APIs for facial recognition
 
 🔐 Core Features
 1️⃣ Multi-Modal Biometric Verification
@@ -103,66 +71,8 @@ Beacon-triggered push notifications
 
 Context-aware event alerts
 
-📊 Functional Requirements
 
-Secure biometric enrollment
 
-Three-factor verification (Identity + Location + Time)
-
-Real-time attendance logging
-
-Automated anomaly detection
-
-Administrative reporting
-
-⚙ Non-Functional Requirements
-
-99.9% system uptime
-
-AES-256 encryption (data at rest)
-
-TLS encryption (data in transit)
-
-High scalability using modular/microservice architecture
-
-Cross-platform compatibility (Android 8+ / iOS 12+)
-
-Optimized user experience with instant visual feedback
-
-💻 Hardware Requirements
-Development
-
-Intel Core i5 / AMD Ryzen 5
-
-8GB RAM
-
-256GB SSD
-
-End Users
-
-Android 8.0+ or iOS 12.0+
-
-Fingerprint sensor
-
-Camera
-
-GPS
-
-Bluetooth
-
-Infrastructure
-
-BLE Beacons deployed in indoor zones
-
-🛠 Development Tools
-
-IntelliJ IDEA / VS Code
-
-Git
-
-Postman
-
-Figma
 
 🚀 Future Enhancements
 
