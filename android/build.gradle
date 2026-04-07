@@ -1,0 +1,75 @@
+buildscript {
+    ext {
+        buildToolsVersion = "33.0.0"
+        minSdkVersion = 21
+        compileSdkVersion = 33
+        targetSdkVersion = 33
+        ndkVersion = "23.1.7779620"
+        kotlinVersion = "1.8.22"
+    }
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.0.2")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion") 
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22")
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    configurations.all {
+        resolutionStrategy {
+            force "androidx.core:core:1.10.1"
+            force "androidx.core:core-ktx:1.10.1"
+            force "androidx.appcompat:appcompat:1.6.1"
+            force "androidx.appcompat:appcompat-resources:1.6.1"
+            force "androidx.fragment:fragment:1.5.7"
+            force "androidx.fragment:fragment-ktx:1.5.7"
+
+            // 🔥 ADD THESE (IMPORTANT)
+            force "androidx.activity:activity:1.7.2"
+            force "androidx.activity:activity-ktx:1.7.2"
+           force "androidx.transition:transition:1.4.1"
+            force "androidx.transition:transition-ktx:1.4.1"
+            force "androidx.dynamicanimation:dynamicanimation:1.0.0"
+            force "androidx.graphics:graphics-shapes-android:1.0.0"
+            force "androidx.annotation:annotation-experimental:1.3.0"
+        }
+    }
+}
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            project.android {
+
+                // Namespace fix
+                if (namespace == null) {
+                    namespace project.group.toString()
+                }
+
+                // Java fix
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_11
+                    targetCompatibility JavaVersion.VERSION_11
+                }
+
+                // 🔥 FORCE Kotlin FIX (IMPORTANT)
+                tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                    kotlinOptions {
+                        jvmTarget = "11"
+                    }
+                }
+            }
+        }
+    }
+}
