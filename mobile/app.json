@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "smartpresence-mobile",
+    "slug": "smartpresence-mobile",
+    "version": "1.0.0",
+    "platforms": ["ios", "android"],
+    "android": {
+      "package": "com.anonymous.smartpresencemobile"
+    },
+    "ios": {
+      "bundleIdentifier": "com.chamidu.smartpresence"
+    }
+  }
+}
