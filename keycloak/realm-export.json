@@ -1,0 +1,149 @@
+{
+  "realm": "smartpresence",
+  "enabled": true,
+  "displayName": "SmartPresence",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "accessTokenLifespan": 3600,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      { "name": "SMARTPRESENCE_ADMIN",    "description": "SmartPresence Administrator" },
+      { "name": "SMARTPRESENCE_LECTURER", "description": "SmartPresence Lecturer" },
+      { "name": "SMARTPRESENCE_STUDENT",  "description": "SmartPresence Student" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "smartpresence-backend",
+      "name": "SmartPresence Backend (Admin API)",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "smartpresence-admin-secret",
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "http://localhost:8080/api/v1/swagger-ui/oauth2-redirect.html"
+      ],
+      "webOrigins": ["http://localhost:8080"],
+      "protocol": "openid-connect",
+      "attributes": {
+        "access.token.lifespan": "3600"
+      }
+    },
+    {
+      "clientId": "smartpresence-app",
+      "name": "SmartPresence Mobile App",
+      "enabled": true,
+      "publicClient": true,
+      "clientAuthenticatorType": "client-secret",
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "admin@smartpresence.lk",
+      "email": "admin@smartpresence.lk",
+      "firstName": "System",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Pass@1234", "temporary": false }],
+      "realmRoles": ["SMARTPRESENCE_ADMIN"]
+    },
+    {
+      "username": "saranga@susl.lk",
+      "email": "saranga@susl.lk",
+      "firstName": "Saranga",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Pass@1234", "temporary": false }],
+      "realmRoles": ["SMARTPRESENCE_ADMIN"]
+    },
+    {
+      "username": "nirubikaa@susl.lk",
+      "email": "nirubikaa@susl.lk",
+      "firstName": "Nirubikaa",
+      "lastName": "Lecturer",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Pass@1234", "temporary": false }],
+      "realmRoles": ["SMARTPRESENCE_LECTURER"]
+    },
+    {
+      "username": "harshani@susl.lk",
+      "email": "harshani@susl.lk",
+      "firstName": "Harshani",
+      "lastName": "Lecturer",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Pass@1234", "temporary": false }],
+      "realmRoles": ["SMARTPRESENCE_LECTURER"]
+    },
+    {
+      "username": "sandeepa@student.susl.lk",
+      "email": "sandeepa@student.susl.lk",
+      "firstName": "Sandeepa",
+      "lastName": "Student",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Pass@1234", "temporary": false }],
+      "realmRoles": ["SMARTPRESENCE_STUDENT"]
+    },
+    {
+      "username": "flagged@student.susl.lk",
+      "email": "flagged@student.susl.lk",
+      "firstName": "Flagged",
+      "lastName": "Student",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Pass@1234", "temporary": false }],
+      "realmRoles": ["SMARTPRESENCE_STUDENT"]
+    },
+    {
+      "username": "absent@student.susl.lk",
+      "email": "absent@student.susl.lk",
+      "firstName": "Absent",
+      "lastName": "Student",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Pass@1234", "temporary": false }],
+      "realmRoles": ["SMARTPRESENCE_STUDENT"]
+    },
+    {
+      "username": "suspended@student.susl.lk",
+      "email": "suspended@student.susl.lk",
+      "firstName": "Suspended",
+      "lastName": "Student",
+      "enabled": false,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Pass@1234", "temporary": false }],
+      "realmRoles": ["SMARTPRESENCE_STUDENT"]
+    },
+    {
+      "username": "newstudent@student.susl.lk",
+      "email": "newstudent@student.susl.lk",
+      "firstName": "New",
+      "lastName": "Student",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Pass@1234", "temporary": false }],
+      "realmRoles": ["SMARTPRESENCE_STUDENT"]
+    }
+  ]
+}

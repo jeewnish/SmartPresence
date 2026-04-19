@@ -1,0 +1,102 @@
+spring:
+  application:
+    name: smartpresence
+
+  # ── Database ────────────────────────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/smartpresence
+    username: ${DB_USERNAME:smartpresence_user}
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+
+  # ── JPA / Hibernate ─────────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate        # Flyway owns the schema; Hibernate only validates
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  # ── Flyway ──────────────────────────────────────────────────────────────────
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  # ── Jackson ─────────────────────────────────────────────────────────────────
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+  # ── OAuth2 Resource Server ───────────────────────────────────────────────────
+  # Spring validates every incoming Bearer token against Keycloak's JWKS endpoint.
+  # No secret key is stored in this application at all.
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Keycloak realm issuer URI — Spring auto-discovers JWKS from /.well-known/openid-configuration
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/smartpresence}
+          # Alternatively you can pin the JWKS URI directly:
+          # jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://localhost:8180/realms/smartpresence/protocol/openid-connect/certs}
+      client:
+        registration:
+          # Used by Swagger UI to run Authorization Code + PKCE flow in browser
+          swagger-ui:
+            provider: keycloak
+            client-id: smartpresence-backend
+            client-secret: ${KEYCLOAK_CLIENT_SECRET:}
+            scope: openid, profile, email, roles
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/swagger-ui/oauth2-redirect.html"
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/smartpresence}
+            user-name-attribute: preferred_username
+
+  # ── WebSocket ────────────────────────────────────────────────────────────────
+  websocket:
+    allowed-origins: "*"
+
+# ── Server ──────────────────────────────────────────────────────────────────
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+# ── SmartPresence application config ──────────────────────────────────────────
+app:
+  oauth2:
+    # The Keycloak realm role names that map to each SmartPresence role.
+    # These must match the roles you create in the Keycloak realm.
+    admin-role:    SMARTPRESENCE_ADMIN
+    lecturer-role: SMARTPRESENCE_LECTURER
+    student-role:  SMARTPRESENCE_STUDENT
+
+  ble:
+    token-lifetime-seconds: 600   # 10 minutes
+
+  attendance:
+    late-grace-minutes: 15
+
+  beacon:
+    stale-after-seconds: 120      # Mark beacon OFFLINE after 2 min of silence
+    api-key: ${BEACON_API_KEY:sp-beacon-key-change-in-prod}
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.smartpresence: DEBUG
+    org.springframework.security: INFO
+    org.flywaydb: INFO
