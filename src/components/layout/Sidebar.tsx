@@ -27,7 +27,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'sticky top-[72px] hidden h-[calc(100svh-72px)] border-r border-slate-200 bg-white/80 px-3 py-4 backdrop-blur-md transition-all dark:border-slate-800 dark:bg-slate-950/80 lg:block',
+        'fixed left-0 top-[72px] hidden h-[calc(100svh-72px)] shrink-0 overflow-y-auto border-r border-slate-200 bg-white/80 px-3 py-4 backdrop-blur-md transition-all dark:border-slate-800 dark:bg-slate-950/80 lg:block',
         collapsed ? 'w-[92px]' : 'w-[260px]',
       )}
     >
@@ -61,17 +61,17 @@ export function Sidebar({ collapsed }: SidebarProps) {
         })}
       </nav>
 
-      <div className="mt-6 rounded-xl border border-sky-200 bg-sky-50/80 p-3 text-xs dark:border-sky-900/50 dark:bg-sky-950/40">
-        <div className="mb-1 inline-flex items-center gap-1 text-sky-700 dark:text-sky-200">
-          <Activity className="h-3.5 w-3.5" />
-          System active
-        </div>
-        {!collapsed && (
+      {!collapsed && (
+        <div className="mt-6 rounded-xl border border-sky-200 bg-sky-50/80 p-3 text-xs dark:border-sky-900/50 dark:bg-sky-950/40">
+          <div className="mb-1 inline-flex items-center gap-1 text-sky-700 dark:text-sky-200">
+            <Activity className="h-3.5 w-3.5" />
+            System active
+          </div>
           <p className="text-slate-600 dark:text-slate-300">
             12 live sessions, 2 degraded beacons, 5 unresolved flags.
           </p>
-        )}
-      </div>
+        </div>
+      )}
     </aside>
   )
 }

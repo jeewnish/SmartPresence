@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Sun,
 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import type { NotificationItem } from '../../types/models'
 import { Badge } from '../common/Badge'
 
@@ -27,8 +28,36 @@ export function TopNavbar({
   unreadCount,
   onMarkRead,
 }: TopNavbarProps) {
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const notificationsRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
+        setNotificationsOpen(false)
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setNotificationsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
+
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/90">
+    <header className="fixed left-0 right-0 top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/90">
       <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between gap-2 px-4">
         <div className="flex items-center gap-3">
           <button
@@ -54,16 +83,16 @@ export function TopNavbar({
           </div>
         </div>
 
-        <div className="relative hidden flex-1 md:block">
+        {/* <div className="relative hidden flex-1 md:block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             className="w-full rounded-xl border border-slate-300 bg-white px-9 py-2 text-sm text-slate-700 outline-none ring-sky-500/40 transition focus:ring dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             placeholder="Search students, sessions, courses..."
           />
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-2">
-          <button
+          {/* <button
             onClick={onToggleTheme}
             className="rounded-lg border border-slate-300 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             aria-label="Toggle theme"
@@ -73,12 +102,15 @@ export function TopNavbar({
             ) : (
               <Moon className="h-4 w-4" />
             )}
-          </button>
+          </button> */}
 
-          <div className="group relative">
+          <div ref={notificationsRef} className="relative">
             <button
+              onClick={() => setNotificationsOpen((prev) => !prev)}
               className="relative rounded-lg border border-slate-300 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
               aria-label="Notifications"
+              aria-expanded={notificationsOpen}
+              aria-haspopup="menu"
             >
               <Bell className="h-4 w-4" />
               {unreadCount > 0 ? (
@@ -87,7 +119,14 @@ export function TopNavbar({
                 </span>
               ) : null}
             </button>
-            <div className="invisible absolute right-0 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-3 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-900">
+            <div
+              className={`absolute right-0 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-3 shadow-xl transition dark:border-slate-700 dark:bg-slate-900 ${
+                notificationsOpen
+                  ? 'visible opacity-100'
+                  : 'invisible opacity-0 pointer-events-none'
+              }`}
+              role="menu"
+            >
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Notifications

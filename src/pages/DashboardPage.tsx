@@ -18,24 +18,15 @@ import {
   checkInTicker,
   kpis,
   sparklineAttendance,
-  systemHealth,
   weeklyAttendance,
 } from '../data/mockData'
 import type { Alert } from '../types/models'
 import { Badge } from '../components/common/Badge'
 import { Card } from '../components/common/Card'
-import { Modal } from '../components/common/Modal'
 import { PageHeader } from '../components/common/PageHeader'
-
-function getHealthVariant(value: 'GREEN' | 'YELLOW' | 'RED') {
-  if (value === 'GREEN') return 'success'
-  if (value === 'YELLOW') return 'warning'
-  return 'danger'
-}
 
 export function DashboardPage() {
   const [alerts, setAlerts] = useState<Alert[]>(anomalyAlerts)
-  const [healthOpen, setHealthOpen] = useState(false)
 
   const unresolvedCount = useMemo(
     () => alerts.filter((alert) => !alert.resolved).length,
@@ -51,7 +42,7 @@ export function DashboardPage() {
   }, [unresolvedCount])
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5">
       <PageHeader
         title="Command Center"
         subtitle="High-level operational visibility for SmartPresence in under 30 seconds."
@@ -67,90 +58,66 @@ export function DashboardPage() {
         }
       />
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:col-span-9">
-          {dashboardKpis.map((kpi) => (
-            <Card
-              key={kpi.label}
-              className={kpi.label === 'Active Sessions Right Now' ? 'ring-1 ring-sky-300 dark:ring-sky-700' : ''}
-            >
-              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                {kpi.label}
-              </p>
-              <div className="mt-2 flex items-center justify-between">
-                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-                  {kpi.value}
-                </p>
-                {kpi.trend ? (
-                  <div className="flex items-center gap-1 text-xs font-medium">
-                    {kpi.trend.direction === 'up' ? (
-                      <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                    ) : (
-                      <ArrowDownRight className="h-4 w-4 text-rose-500" />
-                    )}
-                    <span className="text-slate-600 dark:text-slate-300">{kpi.trend.value}</span>
-                  </div>
-                ) : null}
-              </div>
-              {kpi.label.includes('Attendance') ? (
-                <div className="mt-3 h-14 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={sparklineAttendance.map((value, index) => ({ index, value }))}>
-                      <Area
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#0ea5e9"
-                        fill="url(#sparkFill)"
-                        strokeWidth={2}
-                      />
-                      <defs>
-                        <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.32} />
-                          <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                    </AreaChart>
-                  </ResponsiveContainer>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {dashboardKpis.map((kpi) => (
+          <Card
+            key={kpi.label}
+            className={
+              kpi.label === 'Active Sessions Right Now'
+                ? 'flex h-full min-h-[175px] flex-col ring-1 ring-sky-300 dark:ring-sky-700'
+                : 'flex h-full min-h-[175px] flex-col'
+            }
+          >
+            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {kpi.label}
+            </p>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpi.value}</p>
+              {kpi.trend ? (
+                <div className="flex items-center gap-1 text-xs font-medium">
+                  {kpi.trend.direction === 'up' ? (
+                    <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <ArrowDownRight className="h-4 w-4 text-rose-500" />
+                  )}
+                  <span className="text-slate-600 dark:text-slate-300">{kpi.trend.value}</span>
                 </div>
               ) : null}
-              {kpi.label === 'Open Security Flags' && unresolvedCount > 0 ? (
-                <Badge variant={unresolvedCount > 3 ? 'danger' : 'warning'} className="mt-3">
-                  {unresolvedCount} unresolved flags
-                </Badge>
-              ) : null}
-            </Card>
-          ))}
-        </div>
-
-        <Card className="xl:col-span-3">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">System Health</p>
-            <Badge variant={getHealthVariant(systemHealth.overall)}>{systemHealth.overall}</Badge>
-          </div>
-          <div className="space-y-2 text-sm">
-            <p className="flex items-center justify-between">
-              BLE Beacons <Badge variant={getHealthVariant(systemHealth.beaconHealth)}>{systemHealth.beaconHealth}</Badge>
-            </p>
-            <p className="flex items-center justify-between">
-              Database <Badge variant={getHealthVariant(systemHealth.database)}>{systemHealth.database}</Badge>
-            </p>
-            <p className="flex items-center justify-between">
-              WebSocket <Badge variant={getHealthVariant(systemHealth.websocket)}>{systemHealth.websocket}</Badge>
-            </p>
-          </div>
-          <button
-            onClick={() => setHealthOpen(true)}
-            className="mt-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            View Beacon Details
-          </button>
-        </Card>
+            </div>
+            {kpi.label.includes('Attendance') ? (
+              <div className="mt-auto h-16 w-full pt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={sparklineAttendance.map((value, index) => ({ index, value }))}>
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#0ea5e9"
+                      fill="url(#sparkFill)"
+                      strokeWidth={2}
+                    />
+                    <defs>
+                      <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.32} />
+                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : null}
+            {kpi.label === 'Open Security Flags' && unresolvedCount > 0 ? (
+              <Badge variant={unresolvedCount > 3 ? 'danger' : 'warning'} className="mt-3">
+                {unresolvedCount} unresolved flags
+              </Badge>
+            ) : null}
+          </Card>
+        ))}
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <Card className="xl:col-span-8">
+        <Card className="min-w-0 xl:col-span-8">
           <h2 className="mb-2 text-base font-semibold text-slate-900 dark:text-slate-100">Weekly Attendance Trend</h2>
-          <div className="h-64">
+          <div className="h-64 min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weeklyAttendance}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.35} />
@@ -169,7 +136,7 @@ export function DashboardPage() {
           </div>
         </Card>
 
-        <Card className="xl:col-span-4">
+        <Card className="min-w-0 xl:col-span-4">
           <h2 className="mb-3 text-base font-semibold text-slate-900 dark:text-slate-100">Recent Anomaly Alerts</h2>
           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
             {alerts
@@ -217,40 +184,40 @@ export function DashboardPage() {
         </Card>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-12">
-          <h2 className="mb-3 text-base font-semibold text-slate-900 dark:text-slate-100">Live Active Sessions</h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {activeSessions.map((session) => {
-              const progress = Math.round((session.checkIns / session.expected) * 100)
-              return (
-                <Card key={session.id}>
-                  <p className="text-xs uppercase tracking-wide text-slate-500">{session.courseCode}</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{session.courseName}</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-300">{session.lecturer}</p>
-                  <p className="mt-2 text-xs text-slate-500">{session.venue}</p>
-                  <p className="text-xs text-slate-500">
-                    Started {session.startedAt} • {session.elapsedMinutes} mins elapsed
-                  </p>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                    <div
-                      className="h-full rounded-full bg-sky-500"
-                      style={{ width: `${Math.min(progress, 100)}%` }}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {session.checkIns}/{session.expected} checked in
-                  </p>
-                  <Link
-                    to="/admin/live-sessions"
-                    className="mt-3 inline-flex rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    View Session
-                  </Link>
-                </Card>
-              )
-            })}
-          </div>
+      <section className="space-y-4">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Live Active Sessions</h2>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {activeSessions.map((session) => {
+            const progress = Math.round((session.checkIns / session.expected) * 100)
+            return (
+              <Card key={session.id} className="min-w-0">
+                <p className="text-xs uppercase tracking-wide text-slate-500">{session.courseCode}</p>
+                <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {session.courseName}
+                </p>
+                <p className="text-sm text-slate-600 dark:text-slate-300">{session.lecturer}</p>
+                <p className="mt-2 text-xs text-slate-500">{session.venue}</p>
+                <p className="text-xs text-slate-500">
+                  Started {session.startedAt} • {session.elapsedMinutes} mins elapsed
+                </p>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-sky-500"
+                    style={{ width: `${Math.min(progress, 100)}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {session.checkIns}/{session.expected} checked in
+                </p>
+                <Link
+                  to="/admin/live-sessions"
+                  className="mt-3 inline-flex rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  View Session
+                </Link>
+              </Card>
+            )
+          })}
         </div>
       </section>
 
@@ -264,26 +231,6 @@ export function DashboardPage() {
           ))}
         </div>
       </section>
-
-      <Modal open={healthOpen} title="Beacon Health Details" onClose={() => setHealthOpen(false)}>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Card className="p-3">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Beacon Health</p>
-            <p className="mt-1 text-lg font-semibold">98.4%</p>
-            <p className="text-xs text-slate-500">45/46 beacons healthy</p>
-          </Card>
-          <Card className="p-3">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Database Latency</p>
-            <p className="mt-1 text-lg font-semibold">42 ms</p>
-            <p className="text-xs text-slate-500">within target threshold</p>
-          </Card>
-          <Card className="p-3">
-            <p className="text-xs uppercase tracking-wide text-slate-500">WebSocket Stability</p>
-            <p className="mt-1 text-lg font-semibold">96.2%</p>
-            <p className="text-xs text-slate-500">minor reconnect spikes</p>
-          </Card>
-        </div>
-      </Modal>
     </div>
   )
 }
