@@ -1,4 +1,16 @@
 {
-  "name": "SmartPresence",
-  "displayName": "SmartPresence"
+  "expo": {
+    "name": "SmartPresence",
+    "slug": "smartpresence",
+    "version": "1.0.0",
+    "sdkVersion": "49.0.0", 
+    "platforms": ["ios", "android"],
+    "android": {
+      "package": "com.anonymous.smartpresence",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    }
+  }
 }
