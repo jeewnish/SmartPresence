@@ -1,13 +1,14 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, FileUp, RefreshCcw, ShieldAlert, UserCog } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Eye, FileUp, RefreshCcw, ShieldAlert } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { usersApi } from '../api/users'
+import type { ApiUser } from '../api/users'
 import { Badge } from '../components/common/Badge'
 import { Card } from '../components/common/Card'
 import { DataTable } from '../components/common/DataTable'
 import { Drawer } from '../components/common/Drawer'
 import { PageHeader } from '../components/common/PageHeader'
-import { users } from '../data/mockData'
-import type { UserAccount, UserRole } from '../types/models'
+import type { UserRole } from '../types/models'
 
 const roleTabs: UserRole[] = ['Student', 'Lecturer', 'Admin']
 
@@ -17,29 +18,65 @@ export function UsersPage() {
   const [department, setDepartment] = useState('All')
   const [status, setStatus] = useState<'All' | 'Active' | 'Suspended'>('All')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [selectedUser, setSelectedUser] = useState<UserAccount | null>(null)
+  const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null)
+  const [users, setUsers] = useState<ApiUser[]>([])
+
+  useEffect(() => {
+    let active = true
+
+    const roleParam = role.toUpperCase()
+    const statusParam = status === 'All' ? undefined : status === 'Active'
+
+    usersApi
+      .search({
+        role: roleParam,
+        search: search || undefined,
+        isActive: statusParam,
+        size: 200,
+      })
+      .then((res) => {
+        if (!active) return
+        setUsers(res.content)
+        setSelectedIds([])
+      })
+      .catch((err) => console.error('Failed to load users', err))
+
+    return () => {
+      active = false
+    }
+  }, [role, search, status])
 
   const departments = useMemo(
-    () => ['All', ...new Set(users.map((user) => user.department))],
-    [],
+    () => ['All', ...new Set(users.map((user) => user.department?.name ?? 'N/A'))],
+    [users],
   )
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
-      if (user.role !== role) return false
+      const roleName =
+        user.role === 'STUDENT'
+          ? 'Student'
+          : user.role === 'LECTURER'
+            ? 'Lecturer'
+            : 'Admin'
+      if (roleName !== role) return false
       if (
         search &&
-        !`${user.fullName} ${user.email} ${user.indexNo}`
+        !`${user.firstName} ${user.lastName} ${user.email} ${user.indexNumber ?? ''}`
           .toLowerCase()
           .includes(search.toLowerCase())
       ) {
         return false
       }
-      if (department !== 'All' && user.department !== department) return false
-      if (status !== 'All' && user.status !== status) return false
+      if (department !== 'All' && (user.department?.name ?? 'N/A') !== department) {
+        return false
+      }
+      if (status !== 'All' && (user.isActive ? 'Active' : 'Suspended') !== status) {
+        return false
+      }
       return true
     })
-  }, [role, search, department, status])
+  }, [users, role, search, department, status])
 
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) =>
@@ -47,7 +84,7 @@ export function UsersPage() {
     )
   }
 
-  const columns = useMemo<ColumnDef<UserAccount, unknown>[]>(
+  const columns = useMemo<ColumnDef<ApiUser, unknown>[]>(
     () => [
       {
         id: 'select',
@@ -58,15 +95,19 @@ export function UsersPage() {
               filteredUsers.length > 0 && selectedIds.length === filteredUsers.length
             }
             onChange={(event) =>
-              setSelectedIds(event.target.checked ? filteredUsers.map((user) => user.id) : [])
+              setSelectedIds(
+                event.target.checked
+                  ? filteredUsers.map((user) => String(user.userId))
+                  : [],
+              )
             }
           />
         ),
         cell: ({ row }) => (
           <input
             type="checkbox"
-            checked={selectedIds.includes(row.original.id)}
-            onChange={() => toggleSelection(row.original.id)}
+            checked={selectedIds.includes(String(row.original.userId))}
+            onChange={() => toggleSelection(String(row.original.userId))}
           />
         ),
       },
@@ -79,10 +120,12 @@ export function UsersPage() {
       {
         accessorKey: 'indexNo',
         header: 'Index / ID',
+        cell: ({ row }) => row.original.indexNumber ?? '-',
       },
       {
         accessorKey: 'fullName',
         header: 'Full Name',
+        cell: ({ row }) => `${row.original.firstName} ${row.original.lastName}`,
       },
       {
         accessorKey: 'email',
@@ -91,6 +134,7 @@ export function UsersPage() {
       {
         accessorKey: 'department',
         header: 'Department',
+        cell: ({ row }) => row.original.department?.name ?? 'N/A',
       },
       {
         accessorKey: 'enrollmentYear',
@@ -101,14 +145,18 @@ export function UsersPage() {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
-          <Badge variant={row.original.status === 'Active' ? 'success' : 'warning'}>
-            {row.original.status}
+          <Badge variant={row.original.isActive ? 'success' : 'warning'}>
+            {row.original.isActive ? 'Active' : 'Suspended'}
           </Badge>
         ),
       },
       {
         accessorKey: 'lastLogin',
         header: 'Last Login',
+        cell: ({ row }) =>
+          row.original.createdAt
+            ? new Date(row.original.createdAt).toLocaleDateString()
+            : '-',
       },
       {
         id: 'actions',
@@ -216,77 +264,45 @@ export function UsersPage() {
       <Drawer
         open={Boolean(selectedUser)}
         onClose={() => setSelectedUser(null)}
-        title={selectedUser ? `${selectedUser.fullName} - Quick View` : 'Quick View'}
+        title={
+          selectedUser
+            ? `${selectedUser.firstName} ${selectedUser.lastName} - Quick View`
+            : 'Quick View'
+        }
       >
         {selectedUser ? (
           <div className="space-y-4 text-sm">
             <Card className="p-3">
               <p className="font-semibold text-slate-900 dark:text-slate-100">Profile</p>
               <div className="mt-2 space-y-1 text-slate-600 dark:text-slate-300">
-                <p>ID: {selectedUser.indexNo}</p>
+                <p>ID: {selectedUser.indexNumber ?? '-'}</p>
                 <p>Email: {selectedUser.email}</p>
-                <p>Department: {selectedUser.department}</p>
-                <p>Status: {selectedUser.status}</p>
+                <p>Department: {selectedUser.department?.name ?? 'N/A'}</p>
+                <p>Status: {selectedUser.isActive ? 'Active' : 'Suspended'}</p>
               </div>
             </Card>
 
             <Card className="p-3">
-              <p className="font-semibold text-slate-900 dark:text-slate-100">Device Binding Status</p>
+              <p className="font-semibold text-slate-900 dark:text-slate-100">Account</p>
               <div className="mt-2 space-y-1 text-slate-600 dark:text-slate-300">
-                <p>Fingerprint: {selectedUser.deviceFingerprint}</p>
-                <p>Model: {selectedUser.deviceModel}</p>
-                <p>OS: {selectedUser.deviceOS}</p>
-              </div>
-            </Card>
-
-            <Card className="p-3">
-              <p className="font-semibold text-slate-900 dark:text-slate-100">Biometric Status</p>
-              <div className="mt-2 space-y-1">
-                <Badge variant={selectedUser.faceIdEnrolled ? 'success' : 'warning'}>
-                  FaceID {selectedUser.faceIdEnrolled ? 'Enrolled' : 'Not enrolled'}
-                </Badge>
-                <Badge
-                  variant={selectedUser.fingerprintEnrolled ? 'success' : 'warning'}
-                  className="ml-2"
-                >
-                  Fingerprint {selectedUser.fingerprintEnrolled ? 'Enrolled' : 'Not enrolled'}
-                </Badge>
+                <p>Role: {selectedUser.role}</p>
+                <p>Created: {new Date(selectedUser.createdAt).toLocaleString()}</p>
               </div>
             </Card>
 
             <Card className="p-3">
               <p className="font-semibold text-slate-900 dark:text-slate-100">Recent Attendance</p>
-              <div className="mt-2 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
-                <table className="min-w-full text-xs">
-                  <thead className="bg-slate-100 dark:bg-slate-800">
-                    <tr>
-                      <th className="px-2 py-1 text-left">Course</th>
-                      <th className="px-2 py-1 text-left">Date</th>
-                      <th className="px-2 py-1 text-left">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedUser.recentAttendance.map((item) => (
-                      <tr key={`${item.course}-${item.date}`}>
-                        <td className="px-2 py-1">{item.course}</td>
-                        <td className="px-2 py-1">{item.date}</td>
-                        <td className="px-2 py-1">{item.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="mt-2 text-xs text-slate-500">
+                Attendance details are available in the session logs.
               </div>
             </Card>
 
             <div className="flex flex-wrap gap-2">
-              <button className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold dark:border-slate-700">
-                <UserCog className="h-3.5 w-3.5" /> Edit Profile
-              </button>
               <button className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold dark:border-slate-700">
                 Reset Device Binding
               </button>
               <button className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold dark:border-slate-700">
-                {selectedUser.status === 'Active' ? 'Suspend Account' : 'Activate Account'}
+                {selectedUser.isActive ? 'Suspend Account' : 'Activate Account'}
               </button>
             </div>
           </div>

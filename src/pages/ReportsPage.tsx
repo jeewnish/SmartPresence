@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Download, FileSpreadsheet } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { z } from 'zod'
+import { coursesApi } from '../api/courses'
+import { reportsApi } from '../api/reports'
+import type { ApiCourse } from '../api/courses'
 import { Card } from '../components/common/Card'
 import { PageHeader } from '../components/common/PageHeader'
-import { weeklyAttendance } from '../data/mockData'
 
 const reportSchema = z.object({
   type: z.enum(['Course Attendance', 'Student Summary', 'Security Anomalies']),
@@ -17,13 +19,18 @@ const reportSchema = z.object({
 
 type ReportForm = z.infer<typeof reportSchema>
 
-const pieData = [
-  { name: 'Present', value: 81, color: '#0ea5e9' },
-  { name: 'Late', value: 11, color: '#f59e0b' },
-  { name: 'Absent', value: 8, color: '#ef4444' },
-]
+const SEVERITY_COLORS: Record<string, string> = {
+  HIGH: '#ef4444',
+  MEDIUM: '#f59e0b',
+  LOW: '#0ea5e9',
+}
 
 export function ReportsPage() {
+  const [courses, setCourses] = useState<ApiCourse[]>([])
+  const [attendanceSeries, setAttendanceSeries] = useState<Array<{ label: string; value: number }>>([])
+  const [severitySeries, setSeveritySeries] = useState<Array<{ name: string; value: number; color: string }>>([])
+  const [reportSummary, setReportSummary] = useState('Select a report to preview.')
+
   const {
     register,
     handleSubmit,
@@ -41,18 +48,88 @@ export function ReportsPage() {
 
   const selectedType = watch('type')
 
-  const summary = useMemo(() => {
-    if (selectedType === 'Security Anomalies') {
-      return '14 anomalies detected, 9 resolved, 5 open.'
-    }
-    if (selectedType === 'Student Summary') {
-      return '2,482 active students with 86.7% average attendance.'
-    }
-    return 'Course attendance across 32 sessions with 88.1% weighted average.'
-  }, [selectedType])
+  useEffect(() => {
+    let active = true
+    coursesApi
+      .getAll({ size: 200 })
+      .then((res) => {
+        if (!active) return
+        setCourses(res.content)
+      })
+      .catch((err) => console.error('Failed to load courses', err))
 
-  const onSubmit = () => {
-    window.alert('Report preview refreshed. Connect this to your reports API endpoint.')
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const summary = useMemo(() => reportSummary, [reportSummary])
+
+  const onSubmit = async (values: ReportForm) => {
+    const courseByCode = courses.find(
+      (course) => course.courseCode.toLowerCase() === (values.filter ?? '').toLowerCase(),
+    )
+    const courseId = courseByCode?.courseId ?? courses[0]?.courseId
+
+    if ((selectedType === 'Course Attendance' || selectedType === 'Student Summary') && !courseId) {
+      setReportSummary('No courses found for this report.')
+      setAttendanceSeries([])
+      return
+    }
+
+    if (selectedType === 'Course Attendance' && courseId) {
+      const rows = await reportsApi.courseAttendance({
+        courseId,
+        from: values.from,
+        to: values.to,
+      })
+      const series = rows.map((row) => ({
+        label: String(row.date ?? ''),
+        value: Number(row.studentsPresent ?? 0),
+      }))
+      setAttendanceSeries(series)
+      setReportSummary(`Attendance for ${series.length} sessions.`)
+      setSeveritySeries([])
+      return
+    }
+
+    if (selectedType === 'Student Summary' && courseId) {
+      const rows = await reportsApi.studentSummary({
+        courseId,
+        from: values.from,
+        to: values.to,
+      })
+      const avg = rows.length
+        ? Math.round(
+            (rows.reduce((sum, row) => sum + Number(row.attendancePct ?? 0), 0) / rows.length) * 10,
+          ) / 10
+        : 0
+      setAttendanceSeries([
+        { label: 'Average Attendance %', value: avg },
+      ])
+      setReportSummary(`${rows.length} students, average attendance ${avg}%.`)
+      setSeveritySeries([])
+      return
+    }
+
+    if (selectedType === 'Security Anomalies') {
+      const flags = await reportsApi.securityAnomalies({
+        from: values.from,
+        to: values.to,
+      })
+      const counts = flags.reduce<Record<string, number>>((acc, flag) => {
+        acc[flag.severity] = (acc[flag.severity] ?? 0) + 1
+        return acc
+      }, {})
+      const series = Object.entries(counts).map(([name, value]) => ({
+        name,
+        value,
+        color: SEVERITY_COLORS[name] ?? '#0ea5e9',
+      }))
+      setSeveritySeries(series)
+      setAttendanceSeries([])
+      setReportSummary(`${flags.length} anomalies in the selected range.`)
+    }
   }
 
   return (
@@ -135,11 +212,11 @@ export function ReportsPage() {
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{summary}</p>
           <div className="mt-3 h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyAttendance}>
-                <XAxis dataKey="day" />
-                <YAxis domain={[60, 100]} />
+              <BarChart data={attendanceSeries}>
+                <XAxis dataKey="label" />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="percentage" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="value" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -150,8 +227,14 @@ export function ReportsPage() {
           <div className="mt-3 h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={90} label>
-                  {pieData.map((entry) => (
+                <Pie
+                  data={severitySeries}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={90}
+                  label
+                >
+                  {severitySeries.map((entry) => (
                     <Cell key={entry.name} fill={entry.color} />
                   ))}
                 </Pie>
@@ -160,9 +243,9 @@ export function ReportsPage() {
             </ResponsiveContainer>
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
-            {pieData.map((entry) => (
+            {severitySeries.map((entry) => (
               <span key={entry.name} className="rounded-full border border-slate-300 px-2 py-1 dark:border-slate-700">
-                {entry.name}: {entry.value}%
+                {entry.name}: {entry.value}
               </span>
             ))}
           </div>

@@ -3,6 +3,7 @@ import { AdminLayout } from './components/layout/AdminLayout'
 import { CoursesPage } from './pages/CoursesPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LiveSessionsPage } from './pages/LiveSessionsPage'
+import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -12,6 +13,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="/login" element={<LoginPage />} />
 
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="dashboard" element={<DashboardPage />} />

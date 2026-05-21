@@ -1,26 +1,78 @@
 import { RotateCw, ShieldAlert, StopCircle } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { bleApi } from '../api/ble'
+import { dashboardApi } from '../api/dashboard'
+import { sessionsApi } from '../api/sessions'
+import type { ActiveSession } from '../api/dashboard'
+import type { AttendanceRecord } from '../api/sessions'
 import { Badge } from '../components/common/Badge'
 import { Card } from '../components/common/Card'
 import { Modal } from '../components/common/Modal'
 import { PageHeader } from '../components/common/PageHeader'
-import { activeSessions, activityEvents, sessionLogs } from '../data/mockData'
-import type { ActiveSession } from '../types/models'
+import type { BleBroadcastEvent } from '../api/ble'
 
 export function LiveSessionsPage() {
   const [selected, setSelected] = useState<ActiveSession | null>(null)
   const [manualOverride, setManualOverride] = useState('')
-  const [rotationBoost, setRotationBoost] = useState<Record<string, number>>({})
+  const [sessions, setSessions] = useState<ActiveSession[]>([])
+  const [attendanceLogs, setAttendanceLogs] = useState<AttendanceRecord[]>([])
+  const [bleEvents, setBleEvents] = useState<BleBroadcastEvent[]>([])
 
-  const logs = useMemo(
-    () => (selected ? sessionLogs[selected.id] ?? [] : []),
-    [selected],
-  )
+  useEffect(() => {
+    let active = true
 
-  const events = useMemo(
-    () => (selected ? activityEvents[selected.id] ?? [] : []),
-    [selected],
-  )
+    dashboardApi
+      .getActiveSessions()
+      .then((res) => {
+        if (!active) return
+        setSessions(res)
+      })
+      .catch((err) => console.error('Failed to load active sessions', err))
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!selected) return
+
+    sessionsApi
+      .getAttendance(selected.sessionId)
+      .then((res) => setAttendanceLogs(res))
+      .catch((err) => console.error('Failed to load attendance records', err))
+
+    bleApi
+      .getEventLog(selected.sessionId)
+      .then((res) => setBleEvents(res))
+      .catch((err) => console.error('Failed to load BLE events', err))
+  }, [selected])
+
+  const logs = useMemo(() => attendanceLogs, [attendanceLogs])
+  const events = useMemo(() => bleEvents, [bleEvents])
+
+  const handleRotateToken = async (sessionId: number) => {
+    try {
+      await bleApi.rotateToken(sessionId)
+      const refreshed = await bleApi.getEventLog(sessionId)
+      setBleEvents(refreshed)
+    } catch (err) {
+      console.error('Failed to rotate token', err)
+    }
+  }
+
+  const handleForceEnd = async (sessionId: number) => {
+    try {
+      await sessionsApi.forceEnd(sessionId, 'Admin forced end')
+      const refreshed = await dashboardApi.getActiveSessions()
+      setSessions(refreshed)
+      if (selected?.sessionId === sessionId) {
+        setSelected(null)
+      }
+    } catch (err) {
+      console.error('Failed to force end session', err)
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -39,25 +91,24 @@ export function LiveSessionsPage() {
                 <th className="px-3 py-2 text-left">Lecturer</th>
                 <th className="px-3 py-2 text-left">Venue</th>
                 <th className="px-3 py-2 text-left">Start</th>
-                <th className="px-3 py-2 text-left">Token Rotations</th>
+                <th className="px-3 py-2 text-left">Minutes Left</th>
                 <th className="px-3 py-2 text-left">Checked In</th>
                 <th className="px-3 py-2 text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {activeSessions.map((session) => {
-                const boost = rotationBoost[session.id] ?? 0
+              {sessions.map((session) => {
                 return (
-                  <tr key={session.id} className="border-t border-slate-200 dark:border-slate-700">
-                    <td className="px-3 py-2 font-semibold">{session.id}</td>
+                  <tr key={session.sessionId} className="border-t border-slate-200 dark:border-slate-700">
+                    <td className="px-3 py-2 font-semibold">{session.sessionId}</td>
                     <td className="px-3 py-2">
                       {session.courseCode} - {session.courseName}
                     </td>
-                    <td className="px-3 py-2">{session.lecturer}</td>
-                    <td className="px-3 py-2">{session.venue}</td>
-                    <td className="px-3 py-2">{session.startedAt}</td>
-                    <td className="px-3 py-2">{session.tokenRotationCount + boost}</td>
-                    <td className="px-3 py-2">{session.checkIns}</td>
+                    <td className="px-3 py-2">{session.lecturerName}</td>
+                    <td className="px-3 py-2">{session.venueName}</td>
+                    <td className="px-3 py-2">{new Date(session.startedAt).toLocaleString()}</td>
+                    <td className="px-3 py-2">{session.remainingMinutes}</td>
+                    <td className="px-3 py-2">{session.studentsCheckedIn}</td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
                         <button
@@ -67,17 +118,15 @@ export function LiveSessionsPage() {
                           View Details
                         </button>
                         <button
-                          onClick={() =>
-                            setRotationBoost((prev) => ({
-                              ...prev,
-                              [session.id]: (prev[session.id] ?? 0) + 1,
-                            }))
-                          }
+                          onClick={() => handleRotateToken(session.sessionId)}
                           className="rounded border border-slate-300 px-2 py-1 text-xs font-semibold dark:border-slate-700"
                         >
                           Rotate Token
                         </button>
-                        <button className="rounded border border-rose-300 px-2 py-1 text-xs font-semibold text-rose-600 dark:border-rose-900">
+                        <button
+                          onClick={() => handleForceEnd(session.sessionId)}
+                          className="rounded border border-rose-300 px-2 py-1 text-xs font-semibold text-rose-600 dark:border-rose-900"
+                        >
                           Force End
                         </button>
                       </div>
@@ -92,7 +141,7 @@ export function LiveSessionsPage() {
 
       <Modal
         open={Boolean(selected)}
-        title={selected ? `Session Detail - ${selected.id}` : 'Session Detail'}
+        title={selected ? `Session Detail - ${selected.sessionId}` : 'Session Detail'}
         onClose={() => setSelected(null)}
         widthClassName="max-w-6xl"
       >
@@ -103,9 +152,14 @@ export function LiveSessionsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-wide text-slate-500">BLE Token</p>
-                    <p className="font-mono text-xl font-bold text-slate-900 dark:text-slate-100">TK-{selected.id}-B3A1</p>
+                    <p className="font-mono text-xl font-bold text-slate-900 dark:text-slate-100">
+                      Session {selected.sessionId}
+                    </p>
                   </div>
-                  <button className="inline-flex items-center gap-1 rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white">
+                  <button
+                    onClick={() => handleRotateToken(selected.sessionId)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white"
+                  >
                     <RotateCw className="h-3.5 w-3.5" /> Manual Rotate
                   </button>
                 </div>
@@ -127,24 +181,19 @@ export function LiveSessionsPage() {
                     </thead>
                     <tbody>
                       {logs.map((log) => {
-                        const passed = log.blePassed && log.biometricPassed && log.devicePassed
                         return (
-                          <tr key={log.id} className="border-t border-slate-200 dark:border-slate-700">
-                            <td className="px-2 py-1">{log.timestamp}</td>
+                          <tr key={log.attendanceId} className="border-t border-slate-200 dark:border-slate-700">
+                            <td className="px-2 py-1">{log.checkedInAt ?? '-'}</td>
                             <td className="px-2 py-1">
-                              {log.studentName} ({log.indexNo})
+                              {log.studentName} ({log.indexNumber})
                             </td>
-                            <td className="px-2 py-1">{log.rssi} dBm</td>
-                            <td className="px-2 py-1">{log.estimatedDistance}</td>
+                            <td className="px-2 py-1">-</td>
+                            <td className="px-2 py-1">-</td>
+                            <td className="px-2 py-1">-</td>
                             <td className="px-2 py-1">
-                              BLE {log.blePassed ? '✓' : 'x'} / Bio {log.biometricPassed ? '✓' : 'x'} / Device {log.devicePassed ? '✓' : 'x'}
-                            </td>
-                            <td className="px-2 py-1">
-                              {passed ? (
-                                <Badge variant="success">PASS</Badge>
-                              ) : (
-                                <span className="text-rose-600">FAIL: {log.failureReason}</span>
-                              )}
+                              <Badge variant={log.status === 'PRESENT' ? 'success' : 'warning'}>
+                                {log.status}
+                              </Badge>
                             </td>
                           </tr>
                         )
@@ -161,11 +210,13 @@ export function LiveSessionsPage() {
                 <div className="max-h-72 space-y-2 overflow-y-auto">
                   {events.map((event) => (
                     <div
-                      key={event.id}
+                      key={event.eventId}
                       className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700"
                     >
-                      <p>{event.message}</p>
-                      <p className="mt-1 text-slate-500">{event.time}</p>
+                      <p>{event.eventType}</p>
+                      <p className="mt-1 text-slate-500">
+                        {new Date(event.tokenIssuedAt).toLocaleString()}
+                      </p>
                     </div>
                   ))}
                 </div>

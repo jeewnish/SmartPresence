@@ -1,29 +1,104 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { Plus, UserCheck } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { beaconsApi } from '../api/beacons'
+import { coursesApi } from '../api/courses'
+import type { ApiCourse } from '../api/courses'
 import { Badge } from '../components/common/Badge'
 import { Card } from '../components/common/Card'
 import { DataTable } from '../components/common/DataTable'
 import { Modal } from '../components/common/Modal'
 import { PageHeader } from '../components/common/PageHeader'
-import { courses, enrollments, venueBeacons } from '../data/mockData'
-import type { Course, VenueBeacon } from '../types/models'
+
+interface CourseRow {
+  id: number
+  code: string
+  name: string
+  department: string
+  credits: number
+  semester: string
+  lecturer: string
+  attendanceHealth: number
+}
+
+interface BeaconRow {
+  id: number
+  venueCode: string
+  venueName: string
+  buildingFloor: string
+  beaconMac: string
+  rssiThreshold: number
+  batteryPercent: number
+  lastHeartbeat: string
+  status: 'ONLINE' | 'DEGRADED' | 'OFFLINE' | 'UNKNOWN'
+  heartbeatHistory: Array<{ time: string; signal: number }>
+}
 
 type CourseTab = 'Courses' | 'Venues & Beacons' | 'Enrollments'
 
 export function CoursesPage() {
   const [tab, setTab] = useState<CourseTab>('Courses')
-  const [courseForAssign, setCourseForAssign] = useState<Course | null>(null)
-  const [selectedBeacon, setSelectedBeacon] = useState<VenueBeacon | null>(null)
-  const [selectedCourseId, setSelectedCourseId] = useState(courses[0]?.id ?? '')
+  const [courseForAssign, setCourseForAssign] = useState<CourseRow | null>(null)
+  const [selectedBeacon, setSelectedBeacon] = useState<BeaconRow | null>(null)
+  const [selectedCourseId, setSelectedCourseId] = useState<number | ''>('')
   const [manualStudent, setManualStudent] = useState('')
+  const [courseRows, setCourseRows] = useState<CourseRow[]>([])
+  const [beaconRows, setBeaconRows] = useState<BeaconRow[]>([])
 
-  const enrollmentRows = useMemo(() => {
-    return enrollments.find((item) => item.courseId === selectedCourseId)?.students ?? []
-  }, [selectedCourseId])
+  useEffect(() => {
+    let active = true
 
-  const courseColumns = useMemo<ColumnDef<Course, unknown>[]>(
+    const loadCourses = async () => {
+      const res = await coursesApi.getAll({ size: 200 })
+      const rows: CourseRow[] = res.content.map((course: ApiCourse) => ({
+        id: course.courseId,
+        code: course.courseCode,
+        name: course.courseName,
+        department: course.department?.name ?? 'N/A',
+        credits: course.creditHours,
+        semester: `${course.level}/${course.semester}`,
+        lecturer: 'Unassigned',
+        attendanceHealth: 0,
+      }))
+
+      if (!active) return
+      setCourseRows(rows)
+      setSelectedCourseId(rows[0]?.id ?? '')
+    }
+
+    const loadBeacons = async () => {
+      const res = await beaconsApi.getAll()
+      const rows: BeaconRow[] = res.map((beacon) => ({
+        id: beacon.venueId,
+        venueCode: beacon.venueCode,
+        venueName: beacon.venueName,
+        buildingFloor: 'N/A',
+        beaconMac: beacon.beaconMac,
+        rssiThreshold: beacon.rssiSelfCheck ?? 0,
+        batteryPercent: beacon.batteryPct ?? 0,
+        lastHeartbeat: beacon.lastHeartbeatAt
+          ? new Date(beacon.lastHeartbeatAt).toLocaleString()
+          : 'N/A',
+        status: beacon.status,
+        heartbeatHistory: [],
+      }))
+
+      if (!active) return
+      setBeaconRows(rows)
+    }
+
+    loadCourses().catch((err) => console.error('Failed to load courses', err))
+    loadBeacons().catch((err) => console.error('Failed to load beacons', err))
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const enrollmentRows = useMemo(() => [], [selectedCourseId])
+
+  const courseColumns = useMemo<ColumnDef<CourseRow, unknown>[]>(
     () => [
       { accessorKey: 'code', header: 'Course Code' },
       { accessorKey: 'name', header: 'Course Name' },
@@ -62,13 +137,13 @@ export function CoursesPage() {
     [],
   )
 
-  const venueColumns = useMemo<ColumnDef<VenueBeacon, unknown>[]>(
+  const venueColumns = useMemo<ColumnDef<BeaconRow, unknown>[]>(
     () => [
       { accessorKey: 'venueCode', header: 'Venue Code' },
       { accessorKey: 'venueName', header: 'Venue Name' },
       { accessorKey: 'buildingFloor', header: 'Building/Floor' },
       { accessorKey: 'beaconMac', header: 'Beacon MAC' },
-      { accessorKey: 'rssiThreshold', header: 'RSSI Threshold' },
+      { accessorKey: 'rssiThreshold', header: 'RSSI Self Check' },
       {
         accessorKey: 'batteryPercent',
         header: 'Battery %',
@@ -142,13 +217,13 @@ export function CoursesPage() {
 
       {tab === 'Courses' ? (
         <Card>
-          <DataTable data={courses} columns={courseColumns} />
+          <DataTable data={courseRows} columns={courseColumns} />
         </Card>
       ) : null}
 
       {tab === 'Venues & Beacons' ? (
         <Card>
-          <DataTable data={venueBeacons} columns={venueColumns} />
+          <DataTable data={beaconRows} columns={venueColumns} />
         </Card>
       ) : null}
 
@@ -157,10 +232,12 @@ export function CoursesPage() {
           <div className="flex flex-wrap items-center gap-2">
             <select
               value={selectedCourseId}
-              onChange={(event) => setSelectedCourseId(event.target.value)}
+              onChange={(event) =>
+                setSelectedCourseId(event.target.value ? Number(event.target.value) : '')
+              }
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
             >
-              {courses.map((course) => (
+              {courseRows.map((course) => (
                 <option key={course.id} value={course.id}>
                   {course.code} - {course.name}
                 </option>

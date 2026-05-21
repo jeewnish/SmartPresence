@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import loginBg from '../assets/db-bg-login.jpg'
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -25,68 +26,82 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-8 shadow-lg">
-        {/* Logo / Title */}
-        <div className="mb-6 text-center">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-sky-600 mb-3">
-            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
-            </svg>
-          </div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">SmartPresence</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Admin Dashboard</p>
-        </div>
+    <div className="relative min-h-screen overflow-hidden text-white">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${loginBg})` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#151635]/95 via-[#1a1c3f]/95 to-[#0f1026]/95" />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
-              Username / Email
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              autoComplete="username"
-              placeholder="admin@university.edu"
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
-            />
-          </div>
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-12">
+        <div className="relative w-full max-w-4xl rounded-[36px] border border-white/10 bg-white/5 p-10 shadow-[0_40px_120px_rgba(5,6,30,0.6)] backdrop-blur-xl">
+          <div className="pointer-events-none absolute -left-10 top-12 h-20 w-20 rounded-full bg-white/5" />
+          <div className="pointer-events-none absolute right-10 top-10 h-2 w-2 rounded-full bg-white/50" />
+          <div className="pointer-events-none absolute left-16 top-8 text-white/40">+</div>
+          <div className="pointer-events-none absolute right-16 top-24 text-white/30">+</div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              placeholder="••••••••"
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
-            />
-          </div>
-
-          {error && (
-            <p className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-3 py-2 text-xs text-red-600 dark:text-red-400">
-              {error}
+          <div className="flex flex-col items-center">
+            <p className="font-heading text-3xl font-semibold tracking-wide">SmartPresence</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.3em] text-white/50">
+              Admin Console
             </p>
-          )}
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:opacity-60"
-          >
-            {loading ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
+          <div className="mt-10 flex justify-center">
+            <div className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#22233f]/80 p-6 shadow-[0_20px_60px_rgba(6,8,30,0.55)]">
+              <div className="pointer-events-none absolute -top-6 left-10 h-12 w-24 rounded-full bg-white/10" />
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">
+                    Email Address
+                  </label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    autoComplete="username"
+                    placeholder="admin@university.edu"
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder-white/50 outline-none ring-white/10 focus:ring-2"
+                  />
+                </div>
 
-        <p className="mt-5 text-center text-xs text-slate-400">
-          Authenticate via Keycloak — ADMIN role required
-        </p>
+                <div>
+                  <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder-white/40 outline-none ring-white/10 focus:ring-2"
+                  />
+                </div>
+
+                {error && (
+                  <p className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-full bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-[#1c1d3f] transition hover:bg-white/90 disabled:opacity-60"
+                >
+                  {loading ? 'Signing in…' : 'Log in'}
+                </button>
+              </form>
+
+              <button className="mt-4 w-full text-center text-[10px] uppercase tracking-[0.2em] text-white/50 hover:text-white">
+                Forgot your password?
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

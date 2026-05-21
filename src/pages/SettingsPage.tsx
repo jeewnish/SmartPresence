@@ -1,8 +1,18 @@
 import { Save } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { auditLogsApi, settingsApi } from '../api/settings'
+import type { AuditLogEntry } from '../api/settings'
 import { Card } from '../components/common/Card'
 import { PageHeader } from '../components/common/PageHeader'
-import { auditLogs } from '../data/mockData'
+
+interface AuditLogRow {
+  id: string
+  actor: string
+  action: string
+  entity: string
+  changes: string
+  timestamp: string
+}
 
 type SettingsTab =
   | 'General'
@@ -19,6 +29,54 @@ export function SettingsPage() {
   const [lowBatteryThreshold, setLowBatteryThreshold] = useState(20)
   const [staleTimeout, setStaleTimeout] = useState(15)
   const [logSearch, setLogSearch] = useState('')
+  const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([])
+
+  useEffect(() => {
+    let active = true
+
+    const loadSettings = async () => {
+      const [ble, general] = await Promise.all([
+        settingsApi.getByGroup('BLE'),
+        settingsApi.getByGroup('GENERAL'),
+      ])
+      const map = new Map<string, string>()
+      ble.forEach((setting) => map.set(setting.key, setting.value))
+      general.forEach((setting) => map.set(setting.key, setting.value))
+
+      if (!active) return
+
+      const rssi = Number(map.get('ble_rssi_threshold_strict'))
+      const token = Number(map.get('ble_token_lifetime_seconds'))
+      const grace = Number(map.get('attendance_late_minutes'))
+
+      if (!Number.isNaN(rssi)) setRssiThreshold(rssi)
+      if (!Number.isNaN(token)) setTokenLifetime(token)
+      if (!Number.isNaN(grace)) setGraceMinutes(grace)
+    }
+
+    const loadAuditLogs = async () => {
+      const res = await auditLogsApi.getAll({ size: 200 })
+      if (!active) return
+
+      const rows: AuditLogRow[] = res.content.map((entry: AuditLogEntry) => ({
+        id: String(entry.logId),
+        actor: `${entry.actor.firstName} ${entry.actor.lastName}`,
+        action: entry.action,
+        entity: entry.entityType,
+        changes: JSON.stringify(entry.newValue ?? entry.oldValue ?? {}),
+        timestamp: new Date(entry.performedAt).toLocaleString(),
+      }))
+
+      setAuditLogs(rows)
+    }
+
+    loadSettings().catch((err) => console.error('Failed to load settings', err))
+    loadAuditLogs().catch((err) => console.error('Failed to load audit logs', err))
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   const filteredLogs = useMemo(
     () =>
@@ -29,6 +87,18 @@ export function SettingsPage() {
       ),
     [logSearch],
   )
+
+  const handleSave = async () => {
+    try {
+      await Promise.all([
+        settingsApi.update('ble_rssi_threshold_strict', String(rssiThreshold)),
+        settingsApi.update('ble_token_lifetime_seconds', String(tokenLifetime)),
+        settingsApi.update('attendance_late_minutes', String(graceMinutes)),
+      ])
+    } catch (err) {
+      console.error('Failed to save settings', err)
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -127,7 +197,10 @@ export function SettingsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button className="inline-flex items-center gap-1 rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white">
+            <button
+              onClick={handleSave}
+              className="inline-flex items-center gap-1 rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white"
+            >
               <Save className="h-3.5 w-3.5" /> Save Settings
             </button>
             <a

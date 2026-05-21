@@ -1,5 +1,5 @@
 import { ArrowDownRight, ArrowUpRight, CircleDashed, Plus, Upload } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Area,
@@ -12,34 +12,120 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import {
-  activeSessions,
-  anomalyAlerts,
-  checkInTicker,
-  kpis,
-  sparklineAttendance,
-  weeklyAttendance,
-} from '../data/mockData'
-import type { Alert } from '../types/models'
+import { coursesApi } from '../api/courses'
+import { dashboardApi } from '../api/dashboard'
+import { reportsApi, securityFlagsApi } from '../api/reports'
+import type { AlertItem, DashboardKpi, ActiveSession } from '../api/dashboard'
+import type { AttendancePoint, KPIStat } from '../types/models'
 import { Badge } from '../components/common/Badge'
 import { Card } from '../components/common/Card'
 import { PageHeader } from '../components/common/PageHeader'
 
 export function DashboardPage() {
-  const [alerts, setAlerts] = useState<Alert[]>(anomalyAlerts)
+  const [kpi, setKpi] = useState<DashboardKpi | null>(null)
+  const [alerts, setAlerts] = useState<AlertItem[]>([])
+  const [sessions, setSessions] = useState<ActiveSession[]>([])
+  const [weeklyAttendance, setWeeklyAttendance] = useState<AttendancePoint[]>([])
+  const [sparklineAttendance, setSparklineAttendance] = useState<number[]>([])
+  const [checkInTicker, setCheckInTicker] = useState<string[]>([])
 
-  const unresolvedCount = useMemo(
-    () => alerts.filter((alert) => !alert.resolved).length,
-    [alerts],
-  )
+  useEffect(() => {
+    let active = true
 
-  const dashboardKpis = useMemo(() => {
-    return kpis.map((kpi) =>
-      kpi.label === 'Open Security Flags'
-        ? { ...kpi, value: unresolvedCount.toString() }
-        : kpi,
-    )
-  }, [unresolvedCount])
+    const loadDashboard = async () => {
+      const [kpiRes, sessionRes, alertRes] = await Promise.all([
+        dashboardApi.getKpis(),
+        dashboardApi.getActiveSessions(),
+        dashboardApi.getAlerts(),
+      ])
+
+      if (!active) return
+      setKpi(kpiRes)
+      setSessions(sessionRes)
+      setAlerts(alertRes)
+      setCheckInTicker(
+        sessionRes.map(
+          (session) =>
+            `${session.courseCode} ${session.courseName} • ${session.studentsCheckedIn} checked in`,
+        ),
+      )
+    }
+
+    loadDashboard().catch((err) => {
+      console.error('Failed to load dashboard data', err)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+
+    const loadWeeklyAttendance = async () => {
+      const coursePage = await coursesApi.getAll({ size: 1 })
+      const course = coursePage.content[0]
+      if (!course) {
+        if (active) {
+          setWeeklyAttendance([])
+          setSparklineAttendance([])
+        }
+        return
+      }
+
+      const to = new Date()
+      const from = new Date()
+      from.setDate(to.getDate() - 6)
+
+      const formatDate = (value: Date) => value.toISOString().slice(0, 10)
+      const rows = await reportsApi.courseAttendance({
+        courseId: course.courseId,
+        from: formatDate(from),
+        to: formatDate(to),
+      })
+
+      if (!active) return
+
+      const points = rows.map((row) => {
+        const rawDate = typeof row.date === 'string' ? row.date : String(row.date)
+        const label = new Date(rawDate).toLocaleDateString('en-US', { weekday: 'short' })
+        const present = Number(row.studentsPresent ?? 0)
+        return { day: label, percentage: present }
+      })
+
+      setWeeklyAttendance(points)
+      setSparklineAttendance(points.map((point) => point.percentage))
+    }
+
+    loadWeeklyAttendance().catch((err) => {
+      console.error('Failed to load attendance report', err)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const dashboardKpis = useMemo<KPIStat[]>(() => {
+    if (!kpi) return []
+
+    return [
+      { label: 'Active Students', value: String(kpi.totalActiveStudents) },
+      { label: 'Today Avg Attendance', value: `${kpi.todayAvgAttendancePct}%` },
+      { label: 'Active Sessions Right Now', value: String(kpi.activeSessionsNow) },
+      { label: 'Open Security Flags', value: String(kpi.openSecurityFlags) },
+    ]
+  }, [kpi])
+
+  const handleResolveAlert = async (flagId: number) => {
+    try {
+      await securityFlagsApi.resolve(flagId, 'Resolved from dashboard')
+      setAlerts((prev) => prev.filter((alert) => alert.flagId !== flagId))
+    } catch (err) {
+      console.error('Failed to resolve alert', err)
+    }
+  }
 
   return (
     <div className="min-w-0 space-y-5">
@@ -105,9 +191,12 @@ export function DashboardPage() {
                 </ResponsiveContainer>
               </div>
             ) : null}
-            {kpi.label === 'Open Security Flags' && unresolvedCount > 0 ? (
-              <Badge variant={unresolvedCount > 3 ? 'danger' : 'warning'} className="mt-3">
-                {unresolvedCount} unresolved flags
+            {kpi.label === 'Open Security Flags' && kpi.value !== '0' ? (
+              <Badge
+                variant={Number(kpi.value) > 3 ? 'danger' : 'warning'}
+                className="mt-3"
+              >
+                {kpi.value} unresolved flags
               </Badge>
             ) : null}
           </Card>
@@ -122,7 +211,7 @@ export function DashboardPage() {
               <LineChart data={weeklyAttendance}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.35} />
                 <XAxis dataKey="day" />
-                <YAxis domain={[70, 100]} />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Line
                   type="monotone"
@@ -139,47 +228,39 @@ export function DashboardPage() {
         <Card className="min-w-0 xl:col-span-4">
           <h2 className="mb-3 text-base font-semibold text-slate-900 dark:text-slate-100">Recent Anomaly Alerts</h2>
           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-            {alerts
-              .filter((alert) => !alert.resolved)
-              .map((alert) => (
-                <div
-                  key={alert.id}
-                  className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-800/60"
-                >
-                  <div className="mb-1 flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {alert.studentName}
-                    </p>
-                    <Badge
-                      variant={
-                        alert.severity === 'HIGH'
-                          ? 'danger'
-                          : alert.severity === 'MEDIUM'
-                            ? 'warning'
-                            : 'info'
-                      }
-                    >
-                      {alert.severity}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-300">
-                    {alert.type} • {alert.time}
+            {alerts.map((alert) => (
+              <div
+                key={alert.flagId}
+                className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-800/60"
+              >
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {alert.studentName}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{alert.description}</p>
-                  <button
-                    onClick={() =>
-                      setAlerts((prev) =>
-                        prev.map((item) =>
-                          item.id === alert.id ? { ...item, resolved: true } : item,
-                        ),
-                      )
+                  <Badge
+                    variant={
+                      alert.severity === 'HIGH'
+                        ? 'danger'
+                        : alert.severity === 'MEDIUM'
+                          ? 'warning'
+                          : 'info'
                     }
-                    className="mt-2 text-xs font-semibold text-sky-600 dark:text-sky-300"
                   >
-                    Resolve
-                  </button>
+                    {alert.severity}
+                  </Badge>
                 </div>
-              ))}
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  {alert.flagType} • {new Date(alert.flaggedAt).toLocaleString()}
+                </p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{alert.description}</p>
+                <button
+                  onClick={() => handleResolveAlert(alert.flagId)}
+                  className="mt-2 text-xs font-semibold text-sky-600 dark:text-sky-300"
+                >
+                  Resolve
+                </button>
+              </div>
+            ))}
           </div>
         </Card>
       </section>
@@ -187,18 +268,18 @@ export function DashboardPage() {
       <section className="space-y-4">
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Live Active Sessions</h2>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {activeSessions.map((session) => {
-            const progress = Math.round((session.checkIns / session.expected) * 100)
+          {sessions.map((session) => {
+            const progress = session.studentsCheckedIn > 0 ? 100 : 0
             return (
-              <Card key={session.id} className="min-w-0">
+              <Card key={session.sessionId} className="min-w-0">
                 <p className="text-xs uppercase tracking-wide text-slate-500">{session.courseCode}</p>
                 <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
                   {session.courseName}
                 </p>
-                <p className="text-sm text-slate-600 dark:text-slate-300">{session.lecturer}</p>
-                <p className="mt-2 text-xs text-slate-500">{session.venue}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-300">{session.lecturerName}</p>
+                <p className="mt-2 text-xs text-slate-500">{session.venueName}</p>
                 <p className="text-xs text-slate-500">
-                  Started {session.startedAt} • {session.elapsedMinutes} mins elapsed
+                  Started {new Date(session.startedAt).toLocaleString()} • {session.elapsedMinutes} mins elapsed
                 </p>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                   <div
@@ -207,7 +288,7 @@ export function DashboardPage() {
                   />
                 </div>
                 <p className="mt-1 text-xs text-slate-500">
-                  {session.checkIns}/{session.expected} checked in
+                  {session.studentsCheckedIn} checked in
                 </p>
                 <Link
                   to="/admin/live-sessions"

@@ -63,9 +63,16 @@ export async function apiRequest<T>(
   })
 
   if (res.status === 401) {
-    clearToken()
-    window.location.href = '/login'
-    throw new Error('Unauthorized — redirecting to login')
+    const hasToken = !!token
+    const tokenExpired = !hasToken || isTokenExpired()
+
+    if (tokenExpired) {
+      clearToken()
+      window.location.href = '/login'
+      throw new Error('Unauthorized — redirecting to login')
+    }
+
+    throw new Error('Unauthorized — token present but rejected by API')
   }
 
   if (!res.ok) {
@@ -82,7 +89,7 @@ export async function apiRequest<T>(
 // ─── Keycloak token endpoint ─────────────────────────────────────────────────
 
 const KEYCLOAK_URL =
-  import.meta.env.VITE_KEYCLOAK_URL ?? 'http://localhost:8180'
+  import.meta.env.VITE_KEYCLOAK_URL ?? '/auth'
 const KEYCLOAK_REALM =
   import.meta.env.VITE_KEYCLOAK_REALM ?? 'smartpresence'
 const KEYCLOAK_CLIENT_ID =

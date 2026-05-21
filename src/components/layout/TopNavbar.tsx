@@ -1,20 +1,10 @@
-import {
-  Bell,
-  LogOut,
-  Menu,
-  Moon,
-  Search,
-  ShieldCheck,
-  Sun,
-} from 'lucide-react'
+import { Bell, LogOut, Menu, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { NotificationItem } from '../../types/models'
 import { Badge } from '../common/Badge'
 
 interface TopNavbarProps {
   onToggleSidebar: () => void
-  theme: 'light' | 'dark'
-  onToggleTheme: () => void
   notifications: NotificationItem[]
   unreadCount: number
   onMarkRead: () => void
@@ -22,8 +12,6 @@ interface TopNavbarProps {
 
 export function TopNavbar({
   onToggleSidebar,
-  theme,
-  onToggleTheme,
   notifications,
   unreadCount,
   onMarkRead,
@@ -92,18 +80,6 @@ export function TopNavbar({
         </div> */}
 
         <div className="flex items-center gap-2">
-          {/* <button
-            onClick={onToggleTheme}
-            className="rounded-lg border border-slate-300 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
-          </button> */}
-
           <div ref={notificationsRef} className="relative">
             <button
               onClick={() => setNotificationsOpen((prev) => !prev)}
