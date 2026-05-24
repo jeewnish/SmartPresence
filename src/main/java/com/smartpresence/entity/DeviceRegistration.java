@@ -2,6 +2,8 @@ package com.smartpresence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.OffsetDateTime;
 
@@ -27,6 +29,7 @@ public class DeviceRegistration {
     private String deviceModel;
 
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "os_type", nullable = false, columnDefinition = "os_type")
     private OsType osType;
 

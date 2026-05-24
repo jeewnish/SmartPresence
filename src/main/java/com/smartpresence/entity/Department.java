@@ -1,5 +1,6 @@
 package com.smartpresence.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -39,9 +40,15 @@ public class Department {
     private OffsetDateTime updatedAt;
 
     // Relationships
+    @JsonIgnore
     @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
     private List<Course> courses;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
     private List<User> users;
+
+    public String getName() {
+        return departmentName;
+    }
 }

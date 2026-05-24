@@ -65,7 +65,7 @@ Or edit `src/main/resources/application.yml` directly for local dev.
 ./mvnw spring-boot:run
 ```
 
-Flyway automatically runs all 5 migrations on startup:
+Flyway automatically runs all migrations on startup:
 
 | Migration | What it does |
 |---|---|
@@ -74,6 +74,9 @@ Flyway automatically runs all 5 migrations on startup:
 | `V3__sandbox_data.sql` | Full sandbox: 51 users, 60+ sessions, 500+ records |
 | `V4__ble_system.sql` | BLE-specific tables: heartbeats, broadcast events, checkin events |
 | `V5__ble_sandbox_data.sql` | BLE sandbox data: beacon states, heartbeat history, RSSI events |
+| `V6__allow_nullable_device_id.sql` | Allows manual attendance overrides without a bound device |
+| `V7__settings_dashboard_controls.sql` | Seeds richer settings for dashboard controls |
+| `V8__refresh_dashboard_sandbox_data.sql` | Refreshes live-like dashboard data (sessions, attendance, flags, BLE) |
 
 ### 5. Open Swagger UI
 

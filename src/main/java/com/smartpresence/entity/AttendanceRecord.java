@@ -2,6 +2,8 @@ package com.smartpresence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.OffsetDateTime;
 
@@ -52,6 +54,7 @@ public class AttendanceRecord {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "status", nullable = false, columnDefinition = "attendance_status")
     private AttendanceStatus status = AttendanceStatus.PRESENT;
 

@@ -2,6 +2,8 @@ package com.smartpresence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.OffsetDateTime;
 
@@ -28,10 +30,12 @@ public class SecurityFlag {
     private DeviceRegistration device;
 
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "flag_type", nullable = false, columnDefinition = "flag_type")
     private FlagType flagType;
 
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "severity", nullable = false, columnDefinition = "flag_severity")
     @Builder.Default
     private FlagSeverity severity = FlagSeverity.MEDIUM;

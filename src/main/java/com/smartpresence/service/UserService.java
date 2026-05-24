@@ -30,8 +30,9 @@ public class UserService {
     public Page<User> searchUsers(UserRole role, Integer departmentId,
                                    Short enrollmentYear, Boolean isActive,
                                    String search, Pageable pageable) {
+        String normalizedSearch = search == null ? "" : search.trim();
         return userRepository.searchUsers(role, departmentId, enrollmentYear,
-                isActive, search, pageable);
+                isActive, normalizedSearch, pageable);
     }
 
     @Transactional(readOnly = true)

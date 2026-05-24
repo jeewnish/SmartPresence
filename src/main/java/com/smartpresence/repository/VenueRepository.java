@@ -1,6 +1,8 @@
 package com.smartpresence.repository;
 
 import com.smartpresence.entity.Venue;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,4 +16,6 @@ public interface VenueRepository extends JpaRepository<Venue, Integer> {
     Optional<Venue> findByBeaconMac(String beaconMac);
 
     Optional<Venue> findByBeaconUuid(java.util.UUID beaconUuid);
+
+    Page<Venue> findByIsActive(Boolean isActive, Pageable pageable);
 }

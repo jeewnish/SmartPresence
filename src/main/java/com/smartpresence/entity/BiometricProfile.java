@@ -2,6 +2,8 @@ package com.smartpresence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.OffsetDateTime;
 
@@ -26,6 +28,7 @@ public class BiometricProfile {
     private Boolean faceidEnrolled = false;
 
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "preferred_method", nullable = false, columnDefinition = "biometric_method")
     private BiometricMethod preferredMethod = BiometricMethod.NONE;
 

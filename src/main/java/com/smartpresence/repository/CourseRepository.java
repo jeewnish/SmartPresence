@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Integer> {
@@ -23,4 +24,6 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     List<Course> findByLecturer(@Param("lecturerId") Integer lecturerId);
 
     Page<Course> findByIsActive(Boolean isActive, Pageable pageable);
+
+    Optional<Course> findByCourseCode(String courseCode);
 }

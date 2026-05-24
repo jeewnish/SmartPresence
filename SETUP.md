@@ -54,7 +54,7 @@ docker compose up -d
 ```
 
 Services that start:
-- **PostgreSQL** on port `5432`
+- **PostgreSQL** on port `5432` for database clients like `psql`, DBeaver, or pgAdmin
 - **Keycloak** on port `8180` (takes ~60 s to be ready — wait for health check)
 - **Spring Boot** on port `8080` (starts after Keycloak is healthy)
 

@@ -5,28 +5,40 @@ import com.smartpresence.repository.SessionRepository;
 import com.smartpresence.service.SystemSettingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Base64;
+import java.util.Arrays;
 import java.util.Optional;
 
 /**
  * Owns the full lifecycle of BLE session tokens.
  *
  * Token anatomy:
- *   <sessionId-hex>.<random-48-bytes-base64url>
+ *   <4-byte sessionId><4-byte timestamp><4-byte HMAC-SHA256 tag>
+ *   encoded as Base64URL without padding.
  *
- * This lets the student app extract the session ID from the token
- * without a separate API call, while the random suffix prevents guessing.
+ * This keeps the BLE advertisement payload compact enough to fit well
+ * inside the 31-byte advertising limit while still carrying a tamper-
+ * evident session identifier and issue timestamp.
  *
  * Security properties:
- *  - 384 bits of randomness → brute-force infeasible
+ *  - 32-bit truncated HMAC over sessionId + timestamp → tamper detection
  *  - Hard expiry stored in DB → replay attacks are rejected after expiry
  *  - One valid token per session at a time → rolling rotation invalidates old tokens
- *  - Token length fixed at 64 chars after trimming → no length-oracle attacks
+ *  - Token length fixed at 16 chars after Base64URL encoding
  */
 @Slf4j
 @Service
@@ -36,7 +48,8 @@ public class BleTokenService {
     private final SessionRepository      sessionRepository;
     private final SystemSettingService   settingService;
 
-    private static final SecureRandom RNG = new SecureRandom();
+    @Value("${app.ble.token-signing-secret}")
+    private String tokenSigningSecret;
 
     // ── Token generation ─────────────────────────────────────────────────────
 
@@ -84,24 +97,20 @@ public class BleTokenService {
      */
     @Transactional(readOnly = true)
     public Optional<Session> validateToken(String rawToken) {
-        if (rawToken == null || rawToken.isBlank()) return Optional.empty();
-
-        // Token format: <sessionIdHex>.<base64random>
-        String[] parts = rawToken.split("\\.", 2);
-        if (parts.length != 2) {
-            log.warn("BLE token format invalid — no dot separator");
+        Optional<ParsedToken> parsed = parse(rawToken);
+        if (parsed.isEmpty()) {
+            log.warn("BLE token format invalid or tampered");
             return Optional.empty();
         }
 
-        Integer sessionId;
-        try {
-            sessionId = Integer.parseInt(parts[0], 16);
-        } catch (NumberFormatException e) {
-            log.warn("BLE token sessionId hex parse failed");
+        ParsedToken token = parsed.get();
+
+        if (OffsetDateTime.now().toEpochSecond() < token.issuedAtEpochSecond()) {
+            log.warn("BLE token timestamp is in the future");
             return Optional.empty();
         }
 
-        return sessionRepository.findById(sessionId)
+        return sessionRepository.findById(token.sessionId())
                 .filter(s -> s.getStatus() == Session.SessionStatus.ACTIVE)
                 .filter(s -> s.getBleToken().equals(rawToken))
                 .filter(s -> OffsetDateTime.now().isBefore(s.getBleTokenExpiresAt()));
@@ -111,14 +120,7 @@ public class BleTokenService {
 
     /** Extract session ID from a raw token without a DB hit. */
     public Optional<Integer> extractSessionId(String rawToken) {
-        if (rawToken == null) return Optional.empty();
-        String[] parts = rawToken.split("\\.", 2);
-        if (parts.length != 2) return Optional.empty();
-        try {
-            return Optional.of(Integer.parseInt(parts[0], 16));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
+        return parse(rawToken).map(ParsedToken::sessionId);
     }
 
     /** True if the token is within 60 seconds of expiry — lecturer app should refresh soon. */
@@ -133,19 +135,77 @@ public class BleTokenService {
 
     private BleTokenPair generate(Integer sessionId) {
         long lifetimeSecs = settingService.getIntValue("ble_token_lifetime_seconds");
-
-        byte[] randomBytes = new byte[48];
-        RNG.nextBytes(randomBytes);
-        String randomPart = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
-
-        // Prefix with hex session ID so clients can parse it without extra round-trip
-        String token    = Integer.toHexString(sessionId) + "." + randomPart.substring(0, 55);
+        long issuedAtEpochSecond = OffsetDateTime.now(ZoneOffset.UTC).toEpochSecond();
+        String token = encodeToken(sessionId, issuedAtEpochSecond);
         OffsetDateTime expiresAt = OffsetDateTime.now().plusSeconds(lifetimeSecs);
 
         return new BleTokenPair(token, expiresAt);
     }
 
+    private String encodeToken(int sessionId, long issuedAtEpochSecond) {
+        ByteBuffer payload = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN)
+                .putInt(sessionId)
+                .putInt(Math.toIntExact(issuedAtEpochSecond));
+
+        byte[] mac = sign(payload.array());
+
+        ByteBuffer tokenBytes = ByteBuffer.allocate(12).order(ByteOrder.BIG_ENDIAN)
+                .putInt(sessionId)
+                .putInt(Math.toIntExact(issuedAtEpochSecond))
+                .put(mac, 0, 4);
+
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(tokenBytes.array());
+    }
+
+    private Optional<ParsedToken> parse(String rawToken) {
+        if (rawToken == null || rawToken.isBlank()) {
+            return Optional.empty();
+        }
+
+        byte[] decoded;
+        try {
+            decoded = Base64.getUrlDecoder().decode(rawToken);
+        } catch (IllegalArgumentException ex) {
+            return Optional.empty();
+        }
+
+        if (decoded.length != 12) {
+            return Optional.empty();
+        }
+
+        ByteBuffer buffer = ByteBuffer.wrap(decoded).order(ByteOrder.BIG_ENDIAN);
+        int sessionId = buffer.getInt();
+        int issuedAtEpochSecond = buffer.getInt();
+        byte[] mac = new byte[4];
+        buffer.get(mac);
+
+        byte[] expectedMac = Arrays.copyOf(
+                sign(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN)
+                        .putInt(sessionId)
+                        .putInt(issuedAtEpochSecond)
+                        .array()),
+                4);
+
+        if (!MessageDigest.isEqual(mac, expectedMac)) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new ParsedToken(sessionId, Integer.toUnsignedLong(issuedAtEpochSecond)));
+    }
+
+    private byte[] sign(byte[] payload) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(tokenSigningSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return mac.doFinal(payload);
+        } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
+            throw new IllegalStateException("Unable to sign BLE token", ex);
+        }
+    }
+
     // ── Record ───────────────────────────────────────────────────────────────
 
     public record BleTokenPair(String token, OffsetDateTime expiresAt) {}
+
+    private record ParsedToken(int sessionId, long issuedAtEpochSecond) {}
 }

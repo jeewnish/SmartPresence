@@ -29,7 +29,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
           AND (:departmentId IS NULL OR u.department.departmentId = :departmentId)
           AND (:enrollmentYear IS NULL OR u.enrollmentYear = :enrollmentYear)
           AND (:isActive IS NULL OR u.isActive = :isActive)
-          AND (:search IS NULL OR LOWER(u.firstName) LIKE LOWER(CONCAT('%',:search,'%'))
+          AND (:search = '' OR LOWER(u.firstName) LIKE LOWER(CONCAT('%',:search,'%'))
                                OR LOWER(u.lastName)  LIKE LOWER(CONCAT('%',:search,'%'))
                                OR LOWER(u.email)     LIKE LOWER(CONCAT('%',:search,'%'))
                                OR LOWER(u.indexNumber) LIKE LOWER(CONCAT('%',:search,'%')))

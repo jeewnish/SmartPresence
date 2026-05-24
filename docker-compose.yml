@@ -1,5 +1,6 @@
 version: "3.9"
 services:
+
   postgres:
     image: postgres:15-alpine
     container_name: smartpresence-postgres
@@ -36,7 +37,17 @@ services:
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
       - keycloak_data:/opt/keycloak/data
-    # NO HEALTHCHECK - Keycloak starts fine, we just can't check it
+    depends_on:
+      - mailpit
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: smartpresence-mailpit
+    ports:
+      - "1025:1025" 
+      - "8025:8025" 
+    restart: unless-stopped
+    # Removed the empty 'volumes:' line here to fix the array error
 
   app:
     build:
@@ -48,12 +59,13 @@ services:
       postgres:
         condition: service_healthy
       keycloak:
-        condition: service_started # Changed from service_healthy
+        condition: service_started
     environment:
       DB_USERNAME: smartpresence_user
       DB_PASSWORD: ${DB_PASSWORD:-Dev@Pass123}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smartpresence
       KEYCLOAK_ISSUER_URI: http://keycloak:8180/realms/smartpresence
+      KEYCLOAK_JWKS_URI: http://keycloak:8180/realms/smartpresence/protocol/openid-connect/certs
       KEYCLOAK_ADMIN_CLIENT_ID: smartpresence-admin-cli
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-smartpresence-admin-secret}
       KEYCLOAK_REALM: smartpresence
@@ -64,6 +76,25 @@ services:
       - "8080:8080"
     volumes:
       - app_logs:/var/log/smartpresence
+
+  dashboard:
+    image: node:20-alpine
+    container_name: smartpresence-dashboard
+    restart: unless-stopped
+    working_dir: /app
+    depends_on:
+      - app
+      - keycloak
+    environment:
+      BACKEND_URL: http://app:8080
+      KEYCLOAK_URL: http://keycloak:8180
+      VITE_KEYCLOAK_REALM: smartpresence
+      VITE_KEYCLOAK_CLIENT_ID: smartpresence-backend
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../dashboard:/app
 
 volumes:
   postgres_data:

@@ -2,7 +2,9 @@ package com.smartpresence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
@@ -24,6 +26,7 @@ public class ReportLog {
     private User generatedBy;
 
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "report_type", nullable = false, columnDefinition = "report_type")
     private ReportType reportType;
 
@@ -38,6 +41,7 @@ public class ReportLog {
     private Map<String, Object> filtersJson;
 
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "export_format", nullable = false, columnDefinition = "export_format")
     private ExportFormat exportFormat;
 

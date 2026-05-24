@@ -2,6 +2,8 @@ package com.smartpresence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -23,6 +25,7 @@ public class BleBroadcastEvent {
     private Venue venue;
 
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "event_type", nullable = false, columnDefinition = "broadcast_event")
     private BroadcastEvent eventType;
 

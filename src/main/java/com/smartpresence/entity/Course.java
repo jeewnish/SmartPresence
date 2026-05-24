@@ -1,5 +1,6 @@
 package com.smartpresence.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,7 +25,7 @@ public class Course {
     @Column(name = "course_name", nullable = false, length = 150)
     private String courseName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
@@ -55,12 +56,15 @@ public class Course {
     private OffsetDateTime updatedAt;
 
     // Relationships
+    @JsonIgnore
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
     private List<Enrolment> enrolments;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
     private List<CourseAssignment> assignments;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
     private List<Session> sessions;
 }

@@ -2,6 +2,8 @@ package com.smartpresence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -22,6 +24,7 @@ public class BeaconStatusLog {
     private String beaconMac;
 
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "current_status", nullable = false, columnDefinition = "beacon_status")
     private BeaconHeartbeat.BeaconStatus currentStatus = BeaconHeartbeat.BeaconStatus.UNKNOWN;
 

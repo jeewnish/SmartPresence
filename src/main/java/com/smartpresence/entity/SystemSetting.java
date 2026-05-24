@@ -2,6 +2,8 @@ package com.smartpresence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.OffsetDateTime;
 
@@ -22,6 +24,7 @@ public class SystemSetting {
     private String settingValue;
 
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "setting_group", nullable = false, columnDefinition = "setting_group")
     private SettingGroup settingGroup = SettingGroup.GENERAL;
 

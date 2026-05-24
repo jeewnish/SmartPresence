@@ -51,6 +51,15 @@ public class KeycloakAdminService {
     @Value("${KEYCLOAK_ADMIN_CLIENT_SECRET:}")
     private String adminClientSecret;
 
+    @Value("${KEYCLOAK_ADMIN_USERNAME:admin}")
+    private String adminUsername;
+
+    @Value("${KEYCLOAK_ADMIN_PASSWORD:admin}")
+    private String adminPassword;
+
+    @Value("${KEYCLOAK_ADMIN_REALM:master}")
+    private String adminRealm;
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     // ── Create user in Keycloak + local DB ────────────────────────────────────
@@ -127,19 +136,38 @@ public class KeycloakAdminService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        String body = "grant_type=client_credentials"
-                + "&client_id=" + adminClientId
-                + "&client_secret=" + adminClientSecret;
+        if (adminClientSecret != null && !adminClientSecret.isBlank()) {
+            try {
+                String clientCredentialsBody = "grant_type=client_credentials"
+                        + "&client_id=" + adminClientId
+                        + "&client_secret=" + adminClientSecret;
+
+                ResponseEntity<Map> response = restTemplate.postForEntity(
+                        keycloakUrl + "/realms/" + realm + "/protocol/openid-connect/token",
+                        new HttpEntity<>(clientCredentialsBody, headers),
+                        Map.class);
+
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    return (String) response.getBody().get("access_token");
+                }
+            } catch (Exception e) {
+                log.warn("Keycloak client_credentials admin token failed, falling back to admin-cli password grant: {}", e.getMessage());
+            }
+        }
+
+        String passwordBody = "grant_type=password"
+                + "&client_id=admin-cli"
+                + "&username=" + adminUsername
+                + "&password=" + adminPassword;
 
         ResponseEntity<Map> response = restTemplate.postForEntity(
-                keycloakUrl + "/realms/" + realm + "/protocol/openid-connect/token",
-                new HttpEntity<>(body, headers),
+                keycloakUrl + "/realms/" + adminRealm + "/protocol/openid-connect/token",
+                new HttpEntity<>(passwordBody, headers),
                 Map.class);
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
             throw new IllegalStateException("Failed to obtain Keycloak admin token");
         }
-
         return (String) response.getBody().get("access_token");
     }
 
@@ -153,7 +181,11 @@ public class KeycloakAdminService {
                 "firstName",  req.getFirstName(),
                 "lastName",   req.getLastName(),
                 "enabled",    true,
-                "requiredActions", List.of("UPDATE_PASSWORD"),
+                "credentials", List.of(Map.of(
+                        "type", "password",
+                        "value", req.getPassword(),
+                        "temporary", false
+                )),
                 "attributes", Map.of(
                         "indexNumber", req.getIndexNumber() != null
                                 ? List.of(req.getIndexNumber()) : List.of()
