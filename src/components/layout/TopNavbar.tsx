@@ -8,6 +8,7 @@ interface TopNavbarProps {
   notifications: NotificationItem[]
   unreadCount: number
   onMarkRead: () => void
+  onLogout: () => void
 }
 
 export function TopNavbar({
@@ -15,6 +16,7 @@ export function TopNavbar({
   notifications,
   unreadCount,
   onMarkRead,
+  onLogout,
 }: TopNavbarProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const notificationsRef = useRef<HTMLDivElement | null>(null)
@@ -132,7 +134,10 @@ export function TopNavbar({
             <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-sky-400 to-blue-600 text-xs font-bold text-white">
               AU
             </div>
-            <button className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
+            <button
+              onClick={onLogout}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200"
+            >
               Logout <LogOut className="h-3.5 w-3.5" />
             </button>
           </div>

@@ -30,6 +30,7 @@ export function ReportsPage() {
   const [attendanceSeries, setAttendanceSeries] = useState<Array<{ label: string; value: number }>>([])
   const [severitySeries, setSeveritySeries] = useState<Array<{ name: string; value: number; color: string }>>([])
   const [reportSummary, setReportSummary] = useState('Select a report to preview.')
+  const [reportRows, setReportRows] = useState<unknown[]>([])
 
   const {
     register,
@@ -83,6 +84,7 @@ export function ReportsPage() {
         from: values.from,
         to: values.to,
       })
+      setReportRows(rows)
       const series = rows.map((row) => ({
         label: String(row.date ?? ''),
         value: Number(row.studentsPresent ?? 0),
@@ -99,6 +101,7 @@ export function ReportsPage() {
         from: values.from,
         to: values.to,
       })
+      setReportRows(rows)
       const avg = rows.length
         ? Math.round(
             (rows.reduce((sum, row) => sum + Number(row.attendancePct ?? 0), 0) / rows.length) * 10,
@@ -117,6 +120,7 @@ export function ReportsPage() {
         from: values.from,
         to: values.to,
       })
+      setReportRows(flags)
       const counts = flags.reduce<Record<string, number>>((acc, flag) => {
         acc[flag.severity] = (acc[flag.severity] ?? 0) + 1
         return acc
@@ -130,6 +134,31 @@ export function ReportsPage() {
       setAttendanceSeries([])
       setReportSummary(`${flags.length} anomalies in the selected range.`)
     }
+  }
+
+  const downloadCsv = () => {
+    if (reportRows.length === 0) {
+      setReportSummary('Preview a report before downloading CSV.')
+      return
+    }
+
+    const rows = reportRows as Array<Record<string, unknown>>
+    const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))))
+    const escapeCell = (value: unknown) => {
+      const text = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '')
+      return `"${text.replaceAll('"', '""')}"`
+    }
+    const csv = [
+      headers.join(','),
+      ...rows.map((row) => headers.map((header) => escapeCell(row[header])).join(',')),
+    ].join('\n')
+
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${selectedType.toLowerCase().replaceAll(' ', '-')}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -192,13 +221,16 @@ export function ReportsPage() {
             </button>
             <button
               type="button"
+              onClick={downloadCsv}
               className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold dark:border-slate-700"
             >
               <FileSpreadsheet className="h-3.5 w-3.5" /> Download CSV
             </button>
             <button
               type="button"
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold dark:border-slate-700"
+              disabled
+              title="The backend does not expose a PDF export endpoint yet."
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold opacity-50 dark:border-slate-700"
             >
               <Download className="h-3.5 w-3.5" /> Download PDF
             </button>

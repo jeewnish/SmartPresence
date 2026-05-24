@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { useRealtimeNotifications } from '../../hooks/useRealtimeNotifications'
 import { useTheme } from '../../hooks/useTheme'
 import { Sidebar } from './Sidebar'
@@ -7,6 +8,8 @@ import { TopNavbar } from './TopNavbar'
 
 export function AdminLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const navigate = useNavigate()
+  const { logout } = useAuth()
   useTheme()
   const { items, unreadCount, markAllRead } = useRealtimeNotifications([])
   const sidebarOffsetClass = sidebarCollapsed ? 'lg:pl-[108px]' : 'lg:pl-[276px]'
@@ -18,6 +21,10 @@ export function AdminLayout() {
         notifications={items}
         unreadCount={unreadCount}
         onMarkRead={markAllRead}
+        onLogout={() => {
+          logout()
+          navigate('/login')
+        }}
       />
 
       <div className="mx-auto w-full max-w-[1600px] min-w-0 pt-[72px]">

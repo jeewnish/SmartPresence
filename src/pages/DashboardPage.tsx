@@ -1,6 +1,6 @@
 import { ArrowDownRight, ArrowUpRight, CircleDashed, Plus, Upload } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Area,
   AreaChart,
@@ -13,30 +13,61 @@ import {
   YAxis,
 } from 'recharts'
 import { coursesApi } from '../api/courses'
+import type { ApiCourse } from '../api/courses'
+import { beaconsApi } from '../api/beacons'
+import type { BeaconStatus } from '../api/beacons'
 import { dashboardApi } from '../api/dashboard'
 import { reportsApi, securityFlagsApi } from '../api/reports'
+import { sessionsApi } from '../api/sessions'
 import type { AlertItem, DashboardKpi, ActiveSession } from '../api/dashboard'
 import type { AttendancePoint, KPIStat } from '../types/models'
 import { Badge } from '../components/common/Badge'
 import { Card } from '../components/common/Card'
+import { Modal } from '../components/common/Modal'
 import { PageHeader } from '../components/common/PageHeader'
 
 export function DashboardPage() {
+  const navigate = useNavigate()
   const [kpi, setKpi] = useState<DashboardKpi | null>(null)
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [sessions, setSessions] = useState<ActiveSession[]>([])
+  const [courses, setCourses] = useState<ApiCourse[]>([])
+  const [beacons, setBeacons] = useState<BeaconStatus[]>([])
+  const [startModalOpen, setStartModalOpen] = useState(false)
+  const [courseId, setCourseId] = useState<number | ''>('')
+  const [venueId, setVenueId] = useState<number | ''>('')
+  const [durationMinutes, setDurationMinutes] = useState(60)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [weeklyAttendance, setWeeklyAttendance] = useState<AttendancePoint[]>([])
   const [sparklineAttendance, setSparklineAttendance] = useState<number[]>([])
   const [checkInTicker, setCheckInTicker] = useState<string[]>([])
+  const [loadWarning, setLoadWarning] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
 
     const loadDashboard = async () => {
       const [kpiRes, sessionRes, alertRes] = await Promise.all([
-        dashboardApi.getKpis(),
-        dashboardApi.getActiveSessions(),
-        dashboardApi.getAlerts(),
+        dashboardApi.getKpis().catch((err) => {
+          console.error('Failed to load KPIs', err)
+          setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
+          return {
+            totalActiveStudents: 0,
+            todayAvgAttendancePct: 0,
+            activeSessionsNow: 0,
+            openSecurityFlags: 0,
+          }
+        }),
+        dashboardApi.getActiveSessions().catch((err) => {
+          console.error('Failed to load active sessions', err)
+          setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
+          return []
+        }),
+        dashboardApi.getAlerts().catch((err) => {
+          console.error('Failed to load alerts', err)
+          setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
+          return []
+        }),
       ])
 
       if (!active) return
@@ -54,6 +85,35 @@ export function DashboardPage() {
     loadDashboard().catch((err) => {
       console.error('Failed to load dashboard data', err)
     })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+
+    Promise.all([
+      coursesApi.getAll({ size: 200 }).catch((err) => {
+        console.error('Failed to load courses', err)
+        setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
+        return { content: [] as ApiCourse[] }
+      }),
+      beaconsApi.getAll().catch((err) => {
+        console.error('Failed to load beacons', err)
+        setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
+        return [] as BeaconStatus[]
+      }),
+    ])
+      .then(([coursePage, beaconList]) => {
+        if (!active) return
+        setCourses(coursePage.content)
+        setBeacons(beaconList)
+        setCourseId(coursePage.content[0]?.courseId ?? '')
+        setVenueId(beaconList[0]?.venueId ?? '')
+      })
+      .catch((err) => console.error('Failed to load session options', err))
 
     return () => {
       active = false
@@ -100,6 +160,11 @@ export function DashboardPage() {
 
     loadWeeklyAttendance().catch((err) => {
       console.error('Failed to load attendance report', err)
+      setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
+      if (active) {
+        setWeeklyAttendance([])
+        setSparklineAttendance([])
+      }
     })
 
     return () => {
@@ -127,6 +192,27 @@ export function DashboardPage() {
     }
   }
 
+  const handleStartSession = async () => {
+    if (!courseId) {
+      setActionMessage('Select a course before starting a session.')
+      return
+    }
+
+    try {
+      await sessionsApi.start({
+        courseId,
+        venueId: venueId || undefined,
+        durationMinutes,
+      })
+      const refreshed = await dashboardApi.getActiveSessions()
+      setSessions(refreshed)
+      setStartModalOpen(false)
+      setActionMessage('Session started successfully.')
+    } catch (err) {
+      setActionMessage(err instanceof Error ? err.message : 'Failed to start session.')
+    }
+  }
+
   return (
     <div className="min-w-0 space-y-5">
       <PageHeader
@@ -134,15 +220,28 @@ export function DashboardPage() {
         subtitle="High-level operational visibility for SmartPresence in under 30 seconds."
         actions={
           <>
-            <button className="inline-flex items-center gap-1 rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-700">
+            <button
+              onClick={() => setStartModalOpen(true)}
+              className="inline-flex items-center gap-1 rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-700"
+            >
               <Plus className="h-3.5 w-3.5" /> Start New Session
             </button>
-            <button className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+            <button
+              onClick={() => navigate('/admin/users')}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
               <Upload className="h-3.5 w-3.5" /> Import Users (CSV)
             </button>
           </>
         }
       />
+      {loadWarning ? (
+        <Card className="border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20">
+          <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+            {loadWarning}
+          </p>
+        </Card>
+      ) : null}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {dashboardKpis.map((kpi) => (
@@ -312,6 +411,64 @@ export function DashboardPage() {
           ))}
         </div>
       </section>
+
+      <Modal
+        open={startModalOpen}
+        title="Start New Session"
+        onClose={() => setStartModalOpen(false)}
+        widthClassName="max-w-lg"
+      >
+        <div className="space-y-3">
+          <label className="block text-sm">
+            <span className="mb-1 block font-semibold">Course</span>
+            <select
+              value={courseId}
+              onChange={(event) => setCourseId(event.target.value ? Number(event.target.value) : '')}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+            >
+              {courses.map((course) => (
+                <option key={course.courseId} value={course.courseId}>
+                  {course.courseCode} - {course.courseName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-semibold">Venue</span>
+            <select
+              value={venueId}
+              onChange={(event) => setVenueId(event.target.value ? Number(event.target.value) : '')}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+            >
+              <option value="">No venue</option>
+              {beacons.map((beacon) => (
+                <option key={beacon.venueId} value={beacon.venueId}>
+                  {beacon.venueCode} - {beacon.venueName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-semibold">Duration: {durationMinutes} minutes</span>
+            <input
+              type="range"
+              min={15}
+              max={180}
+              step={15}
+              value={durationMinutes}
+              onChange={(event) => setDurationMinutes(Number(event.target.value))}
+              className="w-full"
+            />
+          </label>
+          {actionMessage ? <p className="text-xs text-slate-500">{actionMessage}</p> : null}
+          <button
+            onClick={handleStartSession}
+            className="w-full rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white"
+          >
+            Start Session
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

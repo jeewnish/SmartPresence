@@ -3,9 +3,12 @@ import type { Page } from './users'
 
 export interface SystemSetting {
   settingId: number
-  key: string
-  value: string
-  group: string
+  key?: string
+  value?: string
+  group?: string
+  settingKey?: string
+  settingValue?: string
+  settingGroup?: string
   description: string | null
   updatedAt: string
 }

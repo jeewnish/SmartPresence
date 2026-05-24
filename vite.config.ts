@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-const BACKEND_URL = 'http://localhost:8080'
-const KEYCLOAK_URL = 'http://localhost:8180'
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080'
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8180'
 
 // https://vite.dev/config/
 export default defineConfig({

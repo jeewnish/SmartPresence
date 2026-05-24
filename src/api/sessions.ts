@@ -13,14 +13,32 @@ export interface ApiSession {
 }
 
 export interface AttendanceRecord {
-  attendanceId: number
+  attendanceId?: number
+  recordId?: number
+  student?: {
+    userId: number
+    firstName: string
+    lastName: string
+    indexNumber: string | null
+  }
   studentName: string
   indexNumber: string
-  status: 'PRESENT' | 'LATE' | 'ABSENT'
+  status: 'PRESENT' | 'LATE' | 'MANUAL_OVERRIDE' | 'ABSENT'
   checkedInAt: string | null
 }
 
 export const sessionsApi = {
+  start: (payload: { courseId: number; venueId?: number; durationMinutes: number }) =>
+    apiRequest<ApiSession>('/sessions/start', {
+      method: 'POST',
+      body: payload,
+    }),
+
+  end: (sessionId: number) =>
+    apiRequest<ApiSession>(`/sessions/${sessionId}/end`, {
+      method: 'POST',
+    }),
+
   forceEnd: (sessionId: number, reason: string) =>
     apiRequest<ApiSession>(`/sessions/${sessionId}/force-end`, {
       method: 'POST',

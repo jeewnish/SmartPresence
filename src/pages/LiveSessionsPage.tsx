@@ -14,6 +14,10 @@ import type { BleBroadcastEvent } from '../api/ble'
 export function LiveSessionsPage() {
   const [selected, setSelected] = useState<ActiveSession | null>(null)
   const [manualOverride, setManualOverride] = useState('')
+  const [overrideStudentId, setOverrideStudentId] = useState<number | ''>('')
+  const [overrideStatus, setOverrideStatus] = useState<'PRESENT' | 'LATE' | 'MANUAL_OVERRIDE' | 'ABSENT'>('MANUAL_OVERRIDE')
+  const [forceEndReason, setForceEndReason] = useState('Admin forced end')
+  const [message, setMessage] = useState<string | null>(null)
   const [sessions, setSessions] = useState<ActiveSession[]>([])
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceRecord[]>([])
   const [bleEvents, setBleEvents] = useState<BleBroadcastEvent[]>([])
@@ -39,7 +43,10 @@ export function LiveSessionsPage() {
 
     sessionsApi
       .getAttendance(selected.sessionId)
-      .then((res) => setAttendanceLogs(res))
+      .then((res) => {
+        setAttendanceLogs(res)
+        setOverrideStudentId(res[0]?.student?.userId ?? '')
+      })
       .catch((err) => console.error('Failed to load attendance records', err))
 
     bleApi
@@ -56,21 +63,43 @@ export function LiveSessionsPage() {
       await bleApi.rotateToken(sessionId)
       const refreshed = await bleApi.getEventLog(sessionId)
       setBleEvents(refreshed)
+      setMessage('BLE token rotated.')
     } catch (err) {
-      console.error('Failed to rotate token', err)
+      setMessage(err instanceof Error ? err.message : 'Failed to rotate token.')
     }
   }
 
-  const handleForceEnd = async (sessionId: number) => {
+  const handleForceEnd = async (sessionId: number, reason = 'Admin forced end') => {
     try {
-      await sessionsApi.forceEnd(sessionId, 'Admin forced end')
+      await sessionsApi.forceEnd(sessionId, reason)
       const refreshed = await dashboardApi.getActiveSessions()
       setSessions(refreshed)
       if (selected?.sessionId === sessionId) {
         setSelected(null)
       }
+      setMessage('Session force-ended.')
     } catch (err) {
-      console.error('Failed to force end session', err)
+      setMessage(err instanceof Error ? err.message : 'Failed to force end session.')
+    }
+  }
+
+  const handleManualOverride = async () => {
+    if (!selected || !overrideStudentId) {
+      setMessage('Select a student before applying an override.')
+      return
+    }
+
+    try {
+      await sessionsApi.manualOverride(selected.sessionId, {
+        studentId: overrideStudentId,
+        newStatus: overrideStatus,
+        reason: manualOverride || 'Manual override from dashboard',
+      })
+      const refreshed = await sessionsApi.getAttendance(selected.sessionId)
+      setAttendanceLogs(refreshed)
+      setMessage('Manual override applied.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to apply override.')
     }
   }
 
@@ -80,6 +109,7 @@ export function LiveSessionsPage() {
         title="Live Sessions Monitor"
         subtitle="Deep real-time BLE session visibility, token control, and emergency interventions."
       />
+      {message ? <p className="text-sm text-slate-500">{message}</p> : null}
 
       <Card>
         <div className="overflow-x-auto">
@@ -182,10 +212,12 @@ export function LiveSessionsPage() {
                     <tbody>
                       {logs.map((log) => {
                         return (
-                          <tr key={log.attendanceId} className="border-t border-slate-200 dark:border-slate-700">
+                          <tr key={log.recordId ?? log.attendanceId} className="border-t border-slate-200 dark:border-slate-700">
                             <td className="px-2 py-1">{log.checkedInAt ?? '-'}</td>
                             <td className="px-2 py-1">
-                              {log.studentName} ({log.indexNumber})
+                              {log.student
+                                ? `${log.student.firstName} ${log.student.lastName} (${log.student.indexNumber ?? '-'})`
+                                : `${log.studentName} (${log.indexNumber})`}
                             </td>
                             <td className="px-2 py-1">-</td>
                             <td className="px-2 py-1">-</td>
@@ -225,16 +257,52 @@ export function LiveSessionsPage() {
               <Card className="p-4">
                 <h3 className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">Emergency Controls</h3>
                 <div className="space-y-2">
-                  <button className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white">
+                  <input
+                    value={forceEndReason}
+                    onChange={(event) => setForceEndReason(event.target.value)}
+                    placeholder="Force-end reason"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900"
+                  />
+                  <button
+                    onClick={() => handleForceEnd(selected.sessionId, forceEndReason || 'Admin forced end')}
+                    className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white"
+                  >
                     <StopCircle className="h-3.5 w-3.5" /> Force End Session
                   </button>
+                  <select
+                    value={overrideStudentId}
+                    onChange={(event) => setOverrideStudentId(event.target.value ? Number(event.target.value) : '')}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <option value="">Select student</option>
+                    {logs.map((log) => (
+                      <option key={log.recordId ?? log.attendanceId} value={log.student?.userId ?? ''}>
+                        {log.student
+                          ? `${log.student.firstName} ${log.student.lastName}`
+                          : log.studentName}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={overrideStatus}
+                    onChange={(event) => setOverrideStatus(event.target.value as typeof overrideStatus)}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <option value="MANUAL_OVERRIDE">Manual Override</option>
+                    <option value="PRESENT">Present</option>
+                    <option value="LATE">Late</option>
+                    <option value="ABSENT">Absent</option>
+                  </select>
                   <textarea
                     value={manualOverride}
                     onChange={(event) => setManualOverride(event.target.value)}
                     placeholder="Manual override notes"
                     className="h-24 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900"
                   />
-                  <button className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold dark:border-slate-700">
+                  <button
+                    onClick={handleManualOverride}
+                    className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold dark:border-slate-700"
+                  >
                     <ShieldAlert className="h-3.5 w-3.5" /> Apply Override
                   </button>
                 </div>

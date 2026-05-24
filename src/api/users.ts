@@ -26,8 +26,8 @@ export interface RegisterUserPayload {
   firstName: string
   lastName: string
   email: string
+  password: string
   role: 'STUDENT' | 'LECTURER' | 'ADMIN'
-  departmentId?: number
   indexNumber?: string
   enrollmentYear?: number
 }
