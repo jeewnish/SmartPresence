@@ -1,5 +1,6 @@
 package com.smartpresence.service;
 
+import com.smartpresence.dto.response.SecurityFlagReportResponse;
 import com.smartpresence.entity.*;
 import com.smartpresence.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -9,12 +10,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Report generation service — powers the Reports page.
- * Queries run against normalised tables (not the views) for flexibility.
+ * All queries use JOIN FETCH or @EntityGraph so that associations are
+ * eagerly loaded inside the transaction. This prevents LazyInitializationException
+ * when the controller serialises results (open-in-view is disabled).
  */
 @Service
 @RequiredArgsConstructor
@@ -29,8 +33,8 @@ public class ReportService {
     private final AuditLogRepository         auditLogRepository;
 
     /**
-     * Course Attendance report — all sessions for a course in a date range
-     * with per-session attendance rate.
+     * Course Attendance report — all ended sessions for a course in a date range
+     * with per-session attendance count.
      */
     public List<Map<String, Object>> courseAttendanceReport(
             Integer courseId, LocalDate from, LocalDate to) {
@@ -38,63 +42,61 @@ public class ReportService {
         OffsetDateTime start = from.atStartOfDay().atOffset(ZoneOffset.UTC);
         OffsetDateTime end   = to.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
 
-        return sessionRepository
-                .findAll().stream()
-                .filter(s -> s.getCourse().getCourseId().equals(courseId)
-                          && s.getStartedAt().isAfter(start)
-                          && s.getStartedAt().isBefore(end)
-                          && s.getStatus() != Session.SessionStatus.ACTIVE)
+        // findByCourseAndDateRange uses JOIN FETCH and filters status <> ACTIVE
+        return sessionRepository.findByCourseAndDateRange(courseId, start, end)
+                .stream()
                 .map(s -> {
                     long present = attendanceRepo.countPresentBySession(s.getSessionId());
-                    return Map.<String, Object>of(
-                            "sessionId",    s.getSessionId(),
-                            "date",         s.getStartedAt().toLocalDate(),
-                            "venue",        s.getVenue() != null ? s.getVenue().getVenueCode() : "N/A",
-                            "studentsPresent", present,
-                            "startedAt",    s.getStartedAt(),
-                            "endedAt",      s.getEndedAt()
-                    );
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("sessionId",       s.getSessionId());
+                    row.put("date",            s.getStartedAt().toLocalDate());
+                    row.put("venue",           s.getVenue() != null ? s.getVenue().getVenueCode() : "N/A");
+                    row.put("studentsPresent", present);
+                    row.put("startedAt",       s.getStartedAt());
+                    row.put("endedAt",         s.getEndedAt());
+                    return row;
                 })
                 .toList();
     }
 
     /**
-     * Security Anomalies report — all flags in a date range, optionally filtered
-     * by course/department.
+     * Security Anomalies report — all flags in a date range mapped to DTOs.
+     * findByDateRange uses JOIN FETCH so all relations are loaded within the transaction.
      */
-    public List<SecurityFlag> securityAnomaliesReport(LocalDate from, LocalDate to) {
+    public List<SecurityFlagReportResponse> securityAnomaliesReport(LocalDate from, LocalDate to) {
         OffsetDateTime start = from.atStartOfDay().atOffset(ZoneOffset.UTC);
         OffsetDateTime end   = to.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
 
-        return flagRepository.findAll().stream()
-                .filter(f -> f.getFlaggedAt().isAfter(start)
-                          && f.getFlaggedAt().isBefore(end))
+        return flagRepository.findByDateRange(start, end)
+                .stream()
+                .map(SecurityFlagReportResponse::from)
                 .toList();
     }
 
     /**
      * Student Summary report — per-student attendance stats for a given course.
+     * Uses findByCourseAndDateRange (JOIN FETCH) for sessions and a targeted
+     * count query per student to avoid loading all attendance records.
      */
     public List<Map<String, Object>> studentSummaryReport(Integer courseId,
                                                            LocalDate from, LocalDate to) {
         OffsetDateTime start = from.atStartOfDay().atOffset(ZoneOffset.UTC);
         OffsetDateTime end   = to.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
 
-        long totalSessions = sessionRepository.findAll().stream()
-                .filter(s -> s.getCourse().getCourseId().equals(courseId)
-                          && s.getStartedAt().isAfter(start)
-                          && s.getStartedAt().isBefore(end)
-                          && s.getStatus() != Session.SessionStatus.ACTIVE)
-                .count();
+        long totalSessions = sessionRepository.findByCourseAndDateRange(courseId, start, end).size();
 
-        return userRepository.findAll().stream()
-                .filter(u -> u.getRole() == UserRole.STUDENT)
+        return userRepository.findByRoleAndIsActive(UserRole.STUDENT, true)
+                .stream()
                 .map(u -> {
+                    // Count only attendance records for this student in the given course & range
                     long attended = attendanceRepo
                             .findByStudentUserIdOrderByCheckedInAtDesc(
                                     u.getUserId(), org.springframework.data.domain.Pageable.unpaged())
                             .stream()
-                            .filter(ar -> ar.getSession().getCourse().getCourseId().equals(courseId)
+                            .filter(ar -> ar.getSession() != null
+                                       && ar.getSession().getCourse() != null
+                                       && ar.getSession().getCourse().getCourseId().equals(courseId)
+                                       && ar.getCheckedInAt() != null
                                        && ar.getCheckedInAt().isAfter(start)
                                        && ar.getCheckedInAt().isBefore(end))
                             .count();
@@ -103,14 +105,14 @@ public class ReportService {
                             ? Math.round(attended * 1000.0 / totalSessions) / 10.0
                             : 0.0;
 
-                    return Map.<String, Object>of(
-                            "studentId",      u.getUserId(),
-                            "indexNumber",    u.getIndexNumber() != null ? u.getIndexNumber() : "",
-                            "studentName",    u.getFullName(),
-                            "sessionsAttended", attended,
-                            "totalSessions",  totalSessions,
-                            "attendancePct",  pct
-                    );
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("studentId",        u.getUserId());
+                    row.put("indexNumber",      u.getIndexNumber() != null ? u.getIndexNumber() : "");
+                    row.put("studentName",      u.getFullName() != null ? u.getFullName() : "");
+                    row.put("sessionsAttended", attended);
+                    row.put("totalSessions",    totalSessions);
+                    row.put("attendancePct",    pct);
+                    return row;
                 })
                 .toList();
     }

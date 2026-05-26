@@ -36,4 +36,32 @@ public interface SessionRepository extends JpaRepository<Session, Integer> {
         WHERE s.status = 'ACTIVE'
         """)
     List<Session> findAllActiveSessions();
+
+    @Query("""
+        SELECT s FROM Session s
+        JOIN FETCH s.course
+        JOIN FETCH s.lecturer
+        LEFT JOIN FETCH s.venue
+        WHERE s.course.courseId = :courseId
+          AND s.startedAt >= :from
+          AND s.startedAt < :to
+          AND s.status <> 'ACTIVE'
+        """)
+    List<Session> findByCourseAndDateRange(
+            @Param("courseId") Integer courseId,
+            @Param("from")     java.time.OffsetDateTime from,
+            @Param("to")       java.time.OffsetDateTime to);
+
+    @Query("""
+        SELECT s FROM Session s
+        JOIN FETCH s.course
+        JOIN FETCH s.lecturer
+        LEFT JOIN FETCH s.venue
+        WHERE s.startedAt >= :from
+          AND s.startedAt < :to
+          AND s.status <> 'ACTIVE'
+        """)
+    List<Session> findAllEndedInDateRange(
+            @Param("from") java.time.OffsetDateTime from,
+            @Param("to")   java.time.OffsetDateTime to);
 }

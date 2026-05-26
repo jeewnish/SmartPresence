@@ -10,7 +10,9 @@ G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\dto\request\Ch
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\repository\DeviceRegistrationRepository.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\dto\request\RegisterRequest.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\controller\SettingsController.java
+G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\dto\response\AuditLogEntryResponse.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\config\OpenApiConfig.java
+G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\controller\VenueController.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\repository\UserRepository.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\dto\response\AlertResponse.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\repository\ReportLogRepository.java
@@ -33,9 +35,11 @@ G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\entity\BleBroa
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\repository\AuditLogRepository.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\ble\BleTokenService.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\controller\SessionController.java
+G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\repository\DepartmentRepository.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\ble\scheduler\BleTokenRefreshScheduler.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\controller\AuditLogController.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\repository\BeaconStatusLogRepository.java
+G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\dto\request\CourseUpsertRequest.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\entity\AttendanceRecord.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\entity\BiometricProfile.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\entity\DeviceRegistration.java
@@ -64,6 +68,7 @@ G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\dto\request\Be
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\entity\SecurityFlag.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\dto\request\StartSessionRequest.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\repository\BiometricProfileRepository.java
+G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\controller\DepartmentController.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\websocket\LiveCheckinWebSocketController.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\websocket\LiveSessionPublisher.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\dto\response\CheckinResponse.java
@@ -86,5 +91,6 @@ G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\service\Attend
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\entity\BeaconHeartbeat.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\entity\BleCheckinEvent.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\entity\User.java
+G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\dto\request\VenueUpsertRequest.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\security\JwtHelper.java
 G:\Uni\Capstone\for_edits\backend\src\main\java\com\smartpresence\config\SecurityConfig.java

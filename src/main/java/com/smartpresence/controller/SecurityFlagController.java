@@ -1,6 +1,7 @@
 package com.smartpresence.controller;
 
 import com.smartpresence.dto.response.ApiResponse;
+import com.smartpresence.dto.response.SecurityFlagReportResponse;
 import com.smartpresence.entity.SecurityFlag;
 import com.smartpresence.entity.User;
 import com.smartpresence.repository.SecurityFlagRepository;
@@ -34,37 +35,44 @@ public class SecurityFlagController {
 
     @GetMapping("/open")
     @Operation(summary = "All unresolved flags ordered by severity", security = @SecurityRequirement(name = "oauth2"))
-    public ResponseEntity<ApiResponse<Page<SecurityFlag>>> getOpen(
+    public ResponseEntity<ApiResponse<Page<SecurityFlagReportResponse>>> getOpen(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                flagRepository.findByResolvedOrderBySeverityDescFlaggedAtDesc(
-                        false, PageRequest.of(page, size))));
+        Page<SecurityFlagReportResponse> result = flagRepository
+                .findWithDetailsByResolvedOrderBySeverityDescFlaggedAtDesc(
+                        false, PageRequest.of(page, size))
+                .map(SecurityFlagReportResponse::from);
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @GetMapping("/student/{studentId}")
     @Operation(summary = "All flags for a specific student", security = @SecurityRequirement(name = "oauth2"))
-    public ResponseEntity<ApiResponse<List<SecurityFlag>>> getByStudent(
+    public ResponseEntity<ApiResponse<List<SecurityFlagReportResponse>>> getByStudent(
             @PathVariable Integer studentId) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                flagRepository.findByUserUserIdOrderByFlaggedAtDesc(studentId)));
+        List<SecurityFlagReportResponse> result = flagRepository
+                .findWithDetailsByUserUserIdOrderByFlaggedAtDesc(studentId)
+                .stream()
+                .map(SecurityFlagReportResponse::from)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @PatchMapping("/{flagId}/resolve")
     @Operation(summary = "Mark a security flag as resolved", security = @SecurityRequirement(name = "oauth2"))
-    public ResponseEntity<ApiResponse<SecurityFlag>> resolve(
+    public ResponseEntity<ApiResponse<SecurityFlagReportResponse>> resolve(
             @PathVariable Integer flagId,
             @RequestParam String note,
             @AuthenticationPrincipal Jwt jwt) {
 
         User admin = jwtHelper.resolveUser(jwt);
-        SecurityFlag flag = flagRepository.findById(flagId)
+        SecurityFlag flag = flagRepository.findWithDetailsByFlagId(flagId)
                 .orElseThrow(() -> new IllegalArgumentException("Flag not found: " + flagId));
 
         flag.setResolved(true);
         flag.setResolvedBy(admin);
         flag.setResolvedAt(OffsetDateTime.now());
         flag.setResolutionNote(note);
-        return ResponseEntity.ok(ApiResponse.ok("Flag resolved", flagRepository.save(flag)));
+        flagRepository.save(flag);
+        return ResponseEntity.ok(ApiResponse.ok("Flag resolved", SecurityFlagReportResponse.from(flag)));
     }
 }

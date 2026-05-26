@@ -3,6 +3,7 @@ package com.smartpresence.repository;
 import com.smartpresence.entity.BeaconHeartbeat;
 import com.smartpresence.entity.BeaconStatusLog;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,5 +18,6 @@ public interface BeaconStatusLogRepository extends JpaRepository<BeaconStatusLog
 
     List<BeaconStatusLog> findByCurrentStatus(BeaconHeartbeat.BeaconStatus status);
 
+    @Query("SELECT s FROM BeaconStatusLog s JOIN FETCH s.venue ORDER BY s.venue.venueId ASC")
     List<BeaconStatusLog> findAllByOrderByVenueVenueIdAsc();
 }

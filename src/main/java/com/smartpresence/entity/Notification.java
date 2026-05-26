@@ -42,12 +42,14 @@ public class Notification {
     @Column(name = "related_entity_id")
     private Integer relatedEntityId;
 
+    @Builder.Default
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 
     @Column(name = "read_at")
     private OffsetDateTime readAt;
 
+    @Builder.Default
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();
 

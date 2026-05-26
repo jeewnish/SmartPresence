@@ -93,7 +93,7 @@ public class BeaconController {
                 s.getCurrentStatus() == BeaconHeartbeat.BeaconStatus.OFFLINE);
         boolean anyDegraded  = all.stream().anyMatch(s ->
                 s.getCurrentStatus() == BeaconHeartbeat.BeaconStatus.DEGRADED
-                || Boolean.TRUE.equals(s.isBatteryLow()));
+                || s.isBatteryLow());
 
         String health = anyOffline ? "RED" : (anyDegraded ? "YELLOW" : "GREEN");
         return ResponseEntity.ok(ApiResponse.ok(health));
@@ -113,6 +113,17 @@ public class BeaconController {
     // ── Mapper ────────────────────────────────────────────────────────────────
 
     private BeaconStatusPayload toPayload(BeaconStatusLog s) {
+        if (s == null || s.getVenue() == null) {
+            return BeaconStatusPayload.builder()
+                    .status("UNKNOWN")
+                    .systemHealth("RED")
+                    .build();
+        }
+
+        BeaconHeartbeat.BeaconStatus status = s.getCurrentStatus() != null
+                ? s.getCurrentStatus()
+                : BeaconHeartbeat.BeaconStatus.UNKNOWN;
+
         long activeSessions = sessionRepository.countByStatus(
                 com.smartpresence.entity.Session.SessionStatus.ACTIVE);
 
@@ -121,7 +132,7 @@ public class BeaconController {
                 .venueCode(s.getVenue().getVenueCode())
                 .venueName(s.getVenue().getVenueName())
                 .beaconMac(s.getBeaconMac())
-                .status(s.getCurrentStatus().name())
+                .status(status.name())
                 .batteryPct(s.getBatteryPct())
                 .txPowerDbm(s.getTxPowerDbm())
                 .lastHeartbeatAt(s.getLastHeartbeatAt())
@@ -129,9 +140,9 @@ public class BeaconController {
                 .consecutiveFailures(s.getConsecutiveFailures())
                 .batteryLow(s.isBatteryLow())
                 .hasActiveSession(activeSessions > 0)
-                .systemHealth(s.getCurrentStatus() == BeaconHeartbeat.BeaconStatus.ONLINE
+                .systemHealth(status == BeaconHeartbeat.BeaconStatus.ONLINE
                         ? "GREEN"
-                        : s.getCurrentStatus() == BeaconHeartbeat.BeaconStatus.DEGRADED
+                        : status == BeaconHeartbeat.BeaconStatus.DEGRADED
                         ? "YELLOW" : "RED")
                 .build();
     }

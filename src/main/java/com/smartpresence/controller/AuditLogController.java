@@ -1,7 +1,7 @@
 package com.smartpresence.controller;
 
 import com.smartpresence.dto.response.ApiResponse;
-import com.smartpresence.entity.AuditLog;
+import com.smartpresence.dto.response.AuditLogEntryResponse;
 import com.smartpresence.repository.AuditLogRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,29 +24,32 @@ public class AuditLogController {
 
     @GetMapping
     @Operation(summary = "Get all audit logs (paginated, newest first)")
-    public ResponseEntity<ApiResponse<Page<AuditLog>>> getAll(
+    public ResponseEntity<ApiResponse<Page<AuditLogEntryResponse>>> getAll(
             @PageableDefault(size = 50) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(
-                auditLogRepository.findAllByOrderByPerformedAtDesc(pageable)));
+                auditLogRepository.findAllWithActorOrderByPerformedAtDesc(pageable)
+                        .map(AuditLogEntryResponse::from)));
     }
 
     @GetMapping("/actor/{actorId}")
     @Operation(summary = "Get audit logs filtered by actor (admin/lecturer who made the change)")
-    public ResponseEntity<ApiResponse<Page<AuditLog>>> getByActor(
+    public ResponseEntity<ApiResponse<Page<AuditLogEntryResponse>>> getByActor(
             @PathVariable Integer actorId,
             @PageableDefault(size = 50) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(
-                auditLogRepository.findByActorUserIdOrderByPerformedAtDesc(actorId, pageable)));
+                auditLogRepository.findByActorUserIdWithActorOrderByPerformedAtDesc(actorId, pageable)
+                        .map(AuditLogEntryResponse::from)));
     }
 
     @GetMapping("/entity/{entityType}/{entityId}")
     @Operation(summary = "Get audit history for a specific record (e.g. session, user, setting)")
-    public ResponseEntity<ApiResponse<Page<AuditLog>>> getByEntity(
+    public ResponseEntity<ApiResponse<Page<AuditLogEntryResponse>>> getByEntity(
             @PathVariable String  entityType,
             @PathVariable Integer entityId,
             @PageableDefault(size = 50) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(
-                auditLogRepository.findByEntityTypeAndEntityIdOrderByPerformedAtDesc(
-                        entityType, entityId, pageable)));
+                auditLogRepository.findByEntityTypeAndEntityIdWithActorOrderByPerformedAtDesc(
+                                entityType, entityId, pageable)
+                        .map(AuditLogEntryResponse::from)));
     }
 }

@@ -1,5 +1,6 @@
 package com.smartpresence.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -44,6 +45,7 @@ public class AuditLog {
     @Column(name = "new_value", columnDefinition = "jsonb")
     private Map<String, Object> newValue;
 
+    @JsonIgnore
     @JdbcTypeCode(SqlTypes.INET)
     @Column(name = "ip_address", columnDefinition = "inet")
     private InetAddress ipAddress;
