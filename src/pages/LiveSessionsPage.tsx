@@ -18,6 +18,7 @@ export function LiveSessionsPage() {
   const [overrideStatus, setOverrideStatus] = useState<'PRESENT' | 'LATE' | 'MANUAL_OVERRIDE' | 'ABSENT'>('MANUAL_OVERRIDE')
   const [forceEndReason, setForceEndReason] = useState('Admin forced end')
   const [message, setMessage] = useState<string | null>(null)
+  const [pageError, setPageError] = useState<string | null>(null)
   const [sessions, setSessions] = useState<ActiveSession[]>([])
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceRecord[]>([])
   const [bleEvents, setBleEvents] = useState<BleBroadcastEvent[]>([])
@@ -31,7 +32,10 @@ export function LiveSessionsPage() {
         if (!active) return
         setSessions(res)
       })
-      .catch((err) => console.error('Failed to load active sessions', err))
+      .catch((err) => {
+        console.error('Failed to load active sessions', err)
+        if (active) setPageError(err instanceof Error ? err.message : 'Failed to load sessions. Is the backend running?')
+      })
 
     return () => {
       active = false
@@ -47,12 +51,12 @@ export function LiveSessionsPage() {
         setAttendanceLogs(res)
         setOverrideStudentId(res[0]?.student?.userId ?? '')
       })
-      .catch((err) => console.error('Failed to load attendance records', err))
+      .catch((err) => { console.error('Failed to load attendance records', err); setMessage(err instanceof Error ? err.message : 'Failed to load attendance records.') })
 
     bleApi
       .getEventLog(selected.sessionId)
       .then((res) => setBleEvents(res))
-      .catch((err) => console.error('Failed to load BLE events', err))
+      .catch((err) => { console.error('Failed to load BLE events', err); setMessage(err instanceof Error ? err.message : 'Failed to load BLE events.') })
   }, [selected])
 
   const logs = useMemo(() => attendanceLogs, [attendanceLogs])
@@ -109,6 +113,11 @@ export function LiveSessionsPage() {
         title="Live Sessions Monitor"
         subtitle="Deep real-time BLE session visibility, token control, and emergency interventions."
       />
+      {pageError ? (
+        <div className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+          <span className="font-semibold">Load error: </span>{pageError}
+        </div>
+      ) : null}
       {message ? <p className="text-sm text-slate-500">{message}</p> : null}
 
       <Card>

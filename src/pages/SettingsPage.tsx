@@ -121,21 +121,36 @@ export function SettingsPage() {
   const [logSearch, setLogSearch] = useState('')
   const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([])
   const [message, setMessage] = useState<string | null>(null)
+  const [pageError, setPageError] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
 
     const loadSettings = async () => {
-      const [ble, general, security, notifications] = await Promise.all([
+      const [bleResult, generalResult, securityResult, notificationsResult] = await Promise.allSettled([
         settingsApi.getByGroup('BLE'),
         settingsApi.getByGroup('GENERAL'),
         settingsApi.getByGroup('SECURITY'),
         settingsApi.getByGroup('NOTIFICATIONS'),
       ])
       const map = new Map<string, string>()
-      ;[...ble, ...general, ...security, ...notifications].forEach((setting) => {
-        map.set(settingKey(setting), settingValue(setting))
+      const failedGroups: string[] = []
+      ;[
+        [bleResult, 'BLE'] as const,
+        [generalResult, 'General'] as const,
+        [securityResult, 'Security'] as const,
+        [notificationsResult, 'Notifications'] as const,
+      ].forEach(([result, name]) => {
+        if (result.status === 'fulfilled') {
+          result.value.forEach((setting) => map.set(settingKey(setting), settingValue(setting)))
+        } else {
+          console.error(`Failed to load ${name} settings`, result.reason)
+          failedGroups.push(name)
+        }
       })
+      if (failedGroups.length > 0 && active) {
+        setPageError(`Could not load settings groups: ${failedGroups.join(', ')}.`)
+      }
 
       if (!active) return
 
@@ -176,8 +191,14 @@ export function SettingsPage() {
       )
     }
 
-    loadSettings().catch((err) => console.error('Failed to load settings', err))
-    loadAuditLogs().catch((err) => console.error('Failed to load audit logs', err))
+    loadSettings().catch((err) => {
+      console.error('Failed to load settings', err)
+      if (active) setPageError(err instanceof Error ? err.message : 'Failed to load settings. Is the backend running?')
+    })
+    loadAuditLogs().catch((err) => {
+      console.error('Failed to load audit logs', err)
+      if (active) setMessage(err instanceof Error ? err.message : 'Failed to load audit logs.')
+    })
 
     return () => {
       active = false
@@ -259,6 +280,11 @@ export function SettingsPage() {
         subtitle="Configuration controls grouped by policy, BLE proximity, security, and messaging."
       />
       <StatusMessage message={message} />
+      {pageError ? (
+        <div className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+          <span className="font-semibold">Load error: </span>{pageError}
+        </div>
+      ) : null}
 
       <SegmentedTabs items={tabs} value={tab} onChange={setTab} />
 

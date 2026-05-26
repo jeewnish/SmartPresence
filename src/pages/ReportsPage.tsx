@@ -31,6 +31,7 @@ export function ReportsPage() {
   const [severitySeries, setSeveritySeries] = useState<Array<{ name: string; value: number; color: string }>>([])
   const [reportSummary, setReportSummary] = useState('Select a report to preview.')
   const [reportRows, setReportRows] = useState<unknown[]>([])
+  const [pageError, setPageError] = useState<string | null>(null)
 
   const {
     register,
@@ -57,7 +58,10 @@ export function ReportsPage() {
         if (!active) return
         setCourses(res.content)
       })
-      .catch((err) => console.error('Failed to load courses', err))
+      .catch((err) => {
+        console.error('Failed to load courses', err)
+        if (active) setPageError(err instanceof Error ? err.message : 'Failed to load courses. Is the backend running?')
+      })
 
     return () => {
       active = false
@@ -67,6 +71,7 @@ export function ReportsPage() {
   const summary = useMemo(() => reportSummary, [reportSummary])
 
   const onSubmit = async (values: ReportForm) => {
+    try {
     const courseByCode = courses.find(
       (course) => course.courseCode.toLowerCase() === (values.filter ?? '').toLowerCase(),
     )
@@ -134,6 +139,10 @@ export function ReportsPage() {
       setAttendanceSeries([])
       setReportSummary(`${flags.length} anomalies in the selected range.`)
     }
+    } catch (err) {
+      console.error('Report generation failed', err)
+      setReportSummary(err instanceof Error ? err.message : 'Failed to generate report.')
+    }
   }
 
   const downloadCsv = () => {
@@ -167,6 +176,12 @@ export function ReportsPage() {
         title="Reports & Analytics"
         subtitle="Generate historical insights with export-ready attendance and security analytics."
       />
+
+      {pageError ? (
+        <div className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+          <span className="font-semibold">Load error: </span>{pageError}
+        </div>
+      ) : null}
 
       <Card>
         <h2 className="mb-3 text-base font-semibold text-slate-900 dark:text-slate-100">Report Generator</h2>
@@ -243,36 +258,48 @@ export function ReportsPage() {
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Preview Summary</h3>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{summary}</p>
           <div className="mt-3 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={attendanceSeries}>
-                <XAxis dataKey="label" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {attendanceSeries.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={220}>
+                <BarChart data={attendanceSeries}>
+                  <XAxis dataKey="label" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+                Run a report to see chart data.
+              </div>
+            )}
           </div>
         </Card>
 
         <Card>
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Attendance Composition</h3>
           <div className="mt-3 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={severitySeries}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={90}
-                  label
-                >
-                  {severitySeries.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {severitySeries.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={220}>
+                <PieChart>
+                  <Pie
+                    data={severitySeries}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={90}
+                    label
+                  >
+                    {severitySeries.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+                No anomaly distribution to display.
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
             {severitySeries.map((entry) => (

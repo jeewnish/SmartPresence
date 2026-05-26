@@ -176,6 +176,7 @@ export function CoursesPage() {
   const [venueDraft, setVenueDraft] = useState<VenueDraft>(() => emptyVenueDraft())
   const [editingVenueId, setEditingVenueId] = useState<number | null>(null)
   const [venueSaving, setVenueSaving] = useState(false)
+  const [pageError, setPageError] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -241,10 +242,18 @@ export function CoursesPage() {
       setLecturerId(res.content[0]?.userId ?? '')
     }
 
-    loadCourses().catch((err) => console.error('Failed to load courses', err))
-    loadVenues().catch((err) => console.error('Failed to load venues', err))
-    loadDepartments().catch((err) => console.error('Failed to load departments', err))
-    loadLecturers().catch((err) => console.error('Failed to load lecturers', err))
+    ;(async () => {
+    const errors: string[] = []
+    await Promise.allSettled([
+      loadCourses().catch((err) => { console.error('Failed to load courses', err); errors.push('courses') }),
+      loadVenues().catch((err) => { console.error('Failed to load venues', err); errors.push('venues') }),
+      loadDepartments().catch((err) => { console.error('Failed to load departments', err); errors.push('departments') }),
+      loadLecturers().catch((err) => { console.error('Failed to load lecturers', err); errors.push('lecturers') }),
+    ])
+    if (active && errors.length > 0) {
+      setPageError(`Could not load: ${errors.join(', ')}. Check the console for details.`)
+    }
+    })()
 
     return () => {
       active = false
@@ -531,6 +540,11 @@ export function CoursesPage() {
         }
       />
       <StatusMessage message={message} />
+      {pageError ? (
+        <div className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+          <span className="font-semibold">Load error: </span>{pageError}
+        </div>
+      ) : null}
 
       <SegmentedTabs
         items={['Courses', 'Venues & Beacons', 'Enrollments'] as const}
@@ -980,7 +994,7 @@ export function CoursesPage() {
               <Card className="p-3">Battery: {selectedBeacon.batteryPercent}%</Card>
             </div>
             <div className="h-64 rounded-xl border border-slate-200 p-2 dark:border-slate-700">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                 <LineChart data={selectedBeacon.heartbeatHistory}>
                   <XAxis dataKey="time" />
                   <YAxis domain={[-100, -50]} />

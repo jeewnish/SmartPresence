@@ -68,7 +68,10 @@ export function UsersPage() {
         if (!active) return
         setMessage(null)
       })
-      .catch((err) => console.error('Failed to load users', err))
+      .catch((err) => {
+        console.error('Failed to load users', err)
+        if (active) setMessage(err instanceof Error ? err.message : 'Failed to load users. Is the backend running?')
+      })
 
     return () => {
       active = false

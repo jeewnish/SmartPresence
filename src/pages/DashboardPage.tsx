@@ -41,49 +41,59 @@ export function DashboardPage() {
   const [weeklyAttendance, setWeeklyAttendance] = useState<AttendancePoint[]>([])
   const [sparklineAttendance, setSparklineAttendance] = useState<number[]>([])
   const [checkInTicker, setCheckInTicker] = useState<string[]>([])
-  const [loadWarning, setLoadWarning] = useState<string | null>(null)
+  const [dashboardError, setDashboardError] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
 
     const loadDashboard = async () => {
-      const [kpiRes, sessionRes, alertRes] = await Promise.all([
-        dashboardApi.getKpis().catch((err) => {
-          console.error('Failed to load KPIs', err)
-          setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
-          return {
-            totalActiveStudents: 0,
-            todayAvgAttendancePct: 0,
-            activeSessionsNow: 0,
-            openSecurityFlags: 0,
-          }
-        }),
-        dashboardApi.getActiveSessions().catch((err) => {
-          console.error('Failed to load active sessions', err)
-          setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
-          return []
-        }),
-        dashboardApi.getAlerts().catch((err) => {
-          console.error('Failed to load alerts', err)
-          setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
-          return []
-        }),
+      const [kpiResult, sessionResult, alertResult] = await Promise.allSettled([
+        dashboardApi.getKpis(),
+        dashboardApi.getActiveSessions(),
+        dashboardApi.getAlerts(),
       ])
 
       if (!active) return
-      setKpi(kpiRes)
-      setSessions(sessionRes)
-      setAlerts(alertRes)
-      setCheckInTicker(
-        sessionRes.map(
-          (session) =>
-            `${session.courseCode} ${session.courseName} • ${session.studentsCheckedIn} checked in`,
-        ),
-      )
+
+      const errors: string[] = []
+
+      if (kpiResult.status === 'fulfilled') {
+        setKpi(kpiResult.value)
+      } else {
+        console.error('Failed to load KPIs', kpiResult.reason)
+        errors.push('KPIs')
+      }
+
+      if (sessionResult.status === 'fulfilled') {
+        setSessions(sessionResult.value)
+        setCheckInTicker(
+          sessionResult.value.map(
+            (session) =>
+              `${session.courseCode} ${session.courseName} • ${session.studentsCheckedIn} checked in`,
+          ),
+        )
+      } else {
+        console.error('Failed to load active sessions', sessionResult.reason)
+        errors.push('Active Sessions')
+      }
+
+      if (alertResult.status === 'fulfilled') {
+        setAlerts(alertResult.value)
+      } else {
+        console.error('Failed to load alerts', alertResult.reason)
+        errors.push('Alerts')
+      }
+
+      if (errors.length > 0) {
+        setDashboardError(`Could not load: ${errors.join(', ')}. Check the console for details.`)
+      } else {
+        setDashboardError(null)
+      }
     }
 
     loadDashboard().catch((err) => {
-      console.error('Failed to load dashboard data', err)
+      console.error('Unexpected error loading dashboard', err)
+      if (active) setDashboardError('Failed to connect to the server. Is the backend running?')
     })
 
     return () => {
@@ -95,16 +105,8 @@ export function DashboardPage() {
     let active = true
 
     Promise.all([
-      coursesApi.getAll({ size: 200 }).catch((err) => {
-        console.error('Failed to load courses', err)
-        setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
-        return { content: [] as ApiCourse[] }
-      }),
-      beaconsApi.getAll().catch((err) => {
-        console.error('Failed to load beacons', err)
-        setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
-        return [] as BeaconStatus[]
-      }),
+      coursesApi.getAll({ size: 200 }),
+      beaconsApi.getAll(),
     ])
       .then(([coursePage, beaconList]) => {
         if (!active) return
@@ -160,11 +162,6 @@ export function DashboardPage() {
 
     loadWeeklyAttendance().catch((err) => {
       console.error('Failed to load attendance report', err)
-      setLoadWarning((prev) => prev ?? 'Some dashboard data failed to load.')
-      if (active) {
-        setWeeklyAttendance([])
-        setSparklineAttendance([])
-      }
     })
 
     return () => {
@@ -235,12 +232,11 @@ export function DashboardPage() {
           </>
         }
       />
-      {loadWarning ? (
-        <Card className="border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20">
-          <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-            {loadWarning}
-          </p>
-        </Card>
+
+      {dashboardError ? (
+        <div className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+          <span className="font-semibold">Dashboard error: </span>{dashboardError}
+        </div>
       ) : null}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -269,7 +265,7 @@ export function DashboardPage() {
                 </div>
               ) : null}
             </div>
-            {kpi.label.includes('Attendance') ? (
+            {kpi.label.includes('Attendance') && sparklineAttendance.length > 0 ? (
               <div className="mt-auto h-16 w-full pt-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={sparklineAttendance.map((value, index) => ({ index, value }))}>
@@ -305,7 +301,8 @@ export function DashboardPage() {
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <Card className="min-w-0 xl:col-span-8">
           <h2 className="mb-2 text-base font-semibold text-slate-900 dark:text-slate-100">Weekly Attendance Trend</h2>
-          <div className="h-64 min-w-0">
+          <div className="h-64 w-full min-w-0">
+            {weeklyAttendance.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weeklyAttendance}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.35} />
@@ -321,6 +318,11 @@ export function DashboardPage() {
                 />
               </LineChart>
             </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                No attendance data for this period
+              </div>
+            )}
           </div>
         </Card>
 

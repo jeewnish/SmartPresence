@@ -77,7 +77,17 @@ export async function apiRequest<T>(
 
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`API ${res.status}: ${text}`)
+    const fallback = (() => {
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        return 'Backend service is unavailable. Check API/Keycloak containers and try again.'
+      }
+      if (res.status >= 500) {
+        return 'Server error. Please try again shortly.'
+      }
+      return 'Request failed.'
+    })()
+    const message = text && text.trim().length > 0 ? text : fallback
+    throw new Error(`API ${res.status}: ${message}`)
   }
 
   const json = await res.json()
@@ -114,11 +124,16 @@ export async function fetchKeycloakToken(
     password,
   })
 
-  const res = await fetch(tokenUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  })
+  let res: Response
+  try {
+    res = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    })
+  } catch (error) {
+    throw new Error('Authentication service is unreachable. Check Keycloak and try again.')
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
