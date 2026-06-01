@@ -11,6 +11,11 @@ function getEnvValue(key: string, fallback: string): string {
   return raw && raw.length > 0 ? raw : fallback;
 }
 
+function getOptionalEnvValue(key: string): string | undefined {
+  const raw = env[key];
+  return raw === undefined ? undefined : raw.trim();
+}
+
 function normalizePath(path: string): string {
   const trimmed = path.trim();
   if (!trimmed) {
@@ -23,7 +28,7 @@ function normalizePath(path: string): string {
 export const backendConfig = {
   scheme: getEnvValue('EXPO_PUBLIC_BACKEND_SCHEME', 'http'),
   host: getEnvValue('EXPO_PUBLIC_BACKEND_HOST', defaultHost),
-  port: getEnvValue('EXPO_PUBLIC_BACKEND_PORT', '8080'),
+  port: getOptionalEnvValue('EXPO_PUBLIC_BACKEND_PORT') ?? '8080',
   apiBasePath: normalizePath(getEnvValue('EXPO_PUBLIC_BACKEND_API_BASE_PATH', '/api/v1')),
   registerPath: normalizePath(getEnvValue('EXPO_PUBLIC_BACKEND_REGISTER_PATH', '/auth/register')),
 };
