@@ -1,15 +1,21 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { pastSessions, upcomingSessions } from '../../data';
-import { HistoryTab } from '../../types';
+import { HistoryTab, SessionRecord, UpcomingSession } from '../../types';
 
 type HistoryPageProps = {
   historyTab: HistoryTab;
+  pastSessions: SessionRecord[];
+  upcomingSessions: UpcomingSession[];
   onHistoryTabChange: (value: HistoryTab) => void;
 };
 
-export function HistoryPage({ historyTab, onHistoryTabChange }: HistoryPageProps) {
+export function HistoryPage({
+  historyTab,
+  pastSessions,
+  upcomingSessions,
+  onHistoryTabChange,
+}: HistoryPageProps) {
   return (
     <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 22 }}>
       <Text className="font-inter-bold text-[26px] leading-[34px] text-[#101A39]">

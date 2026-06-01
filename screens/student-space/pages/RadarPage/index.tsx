@@ -1,11 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
-import { Animated, Pressable, Text, View } from 'react-native';
+import { Animated, Pressable, Text, TextInput, View } from 'react-native';
 import { RadarPageProps } from '../../types';
 
 export function RadarPage({
   radarState,
   signalFound,
+  isCheckingIn,
+  checkinMessage,
+  bleTokenInput,
+  onBleTokenChange,
+  lookupMessage,
   pulseOpacity,
   pulseScale,
   signalCardOpacity,
@@ -23,7 +28,7 @@ export function RadarPage({
           Check-In Complete
         </Text>
         <Text className="font-inter mt-3 text-center text-[14px] leading-[22px] text-[#5F6C84]">
-          Attendance validated and synced.
+          {checkinMessage || 'Attendance validated and synced.'}
         </Text>
         <Pressable className="mt-10 w-full rounded-[18px] bg-[#4762EA] py-4" onPress={onResetDemo}>
           <Text className="font-inter-semibold text-center text-[16px] text-white">Reset Demo</Text>
@@ -63,19 +68,36 @@ export function RadarPage({
               <View className="ml-3 flex-1">
                 <Text className="font-inter-semibold text-[14px] text-[#22356B]">Signal Found</Text>
                 <Text className="font-inter mt-1 text-[12px] leading-[18px] text-[#556281]">
-                  IS 4110 Capstone - Room A BLE broadcaster matched.
+                  BLE token detected. Enter token to validate the active session.
                 </Text>
               </View>
             </View>
+            <TextInput
+              className="font-inter mt-3 rounded-[12px] border border-[#CAD5F4] bg-white px-3 py-2 text-[13px] text-[#22356B]"
+              value={bleTokenInput}
+              onChangeText={onBleTokenChange}
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder="Paste BLE token (example: 1a2b3c.XYZ...)"
+              placeholderTextColor="#7F8DAD"
+            />
+            <Text className="font-inter mt-2 text-[11px] text-[#4E5F88]">{lookupMessage}</Text>
           </Animated.View>
         )}
 
         <Pressable
           className={`rounded-[18px] py-4 ${signalFound ? 'bg-[#4762EA]' : 'bg-[#B8C2E3]'}`}
-          disabled={!signalFound}
+          disabled={!signalFound || isCheckingIn}
           onPress={onOpenVerify}>
-          <Text className="font-inter-semibold text-center text-[16px] text-white">Check In Now</Text>
+          <Text className="font-inter-semibold text-center text-[16px] text-white">
+            {isCheckingIn ? 'Checking In...' : 'Check In Now'}
+          </Text>
         </Pressable>
+        {checkinMessage ? (
+          <Text className="font-inter mt-3 text-center text-[12px] leading-[18px] text-[#556281]">
+            {checkinMessage}
+          </Text>
+        ) : null}
       </View>
     </View>
   );

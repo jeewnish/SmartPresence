@@ -31,6 +31,14 @@ export const backendConfig = {
   port: getOptionalEnvValue('EXPO_PUBLIC_BACKEND_PORT') ?? '8080',
   apiBasePath: normalizePath(getEnvValue('EXPO_PUBLIC_BACKEND_API_BASE_PATH', '/api/v1')),
   registerPath: normalizePath(getEnvValue('EXPO_PUBLIC_BACKEND_REGISTER_PATH', '/auth/register')),
+  mePath: normalizePath(getEnvValue('EXPO_PUBLIC_BACKEND_ME_PATH', '/auth/me')),
+  bleSessionLookupPath: normalizePath(
+    getEnvValue('EXPO_PUBLIC_BACKEND_BLE_LOOKUP_PATH', '/ble/session/lookup')
+  ),
+  checkinPath: normalizePath(getEnvValue('EXPO_PUBLIC_BACKEND_CHECKIN_PATH', '/checkin')),
+  registerDevicePath: normalizePath(
+    getEnvValue('EXPO_PUBLIC_BACKEND_REGISTER_DEVICE_PATH', '/checkin/register-device')
+  ),
 };
 
 const portSuffix = backendConfig.port ? `:${backendConfig.port}` : '';
@@ -39,4 +47,8 @@ export const backendBaseUrl = `${backendConfig.scheme}://${backendConfig.host}${
 
 export const backendEndpoints = {
   register: `${backendBaseUrl}${backendConfig.registerPath}`,
+  me: `${backendBaseUrl}${backendConfig.mePath}`,
+  bleSessionLookup: `${backendBaseUrl}${backendConfig.bleSessionLookupPath}`,
+  checkin: `${backendBaseUrl}${backendConfig.checkinPath}`,
+  registerDevice: `${backendBaseUrl}${backendConfig.registerDevicePath}`,
 };

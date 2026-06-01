@@ -8,6 +8,7 @@ export type HistoryTab = 'past' | 'upcoming';
 
 export type StudentRecord = {
   id: string;
+  userId?: number;
   name: string;
   studentId: string;
   present: boolean;
@@ -35,4 +36,11 @@ export type LiveCheckIn = {
   name: string;
   time: string;
   verification: string;
+};
+
+export type BroadcastSummary = {
+  title: string;
+  time: string;
+  room: string;
+  enrolledText: string;
 };

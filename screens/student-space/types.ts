@@ -20,6 +20,11 @@ export type ModuleCard = {
 export type RadarPageProps = {
   radarState: RadarState;
   signalFound: boolean;
+  isCheckingIn: boolean;
+  checkinMessage: string;
+  bleTokenInput: string;
+  onBleTokenChange: (value: string) => void;
+  lookupMessage: string;
   pulseOpacity: Animated.Value;
   pulseScale: Animated.Value;
   signalCardOpacity: Animated.Value;

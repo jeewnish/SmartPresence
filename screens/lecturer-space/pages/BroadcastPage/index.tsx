@@ -1,11 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { LiveCheckIn } from '../../types';
+import { BroadcastSummary, LiveCheckIn } from '../../types';
 
 type BroadcastPageProps = {
   isBroadcasting: boolean;
   liveFeed: LiveCheckIn[];
+  nextBroadcast: BroadcastSummary;
+  statusMessage: string;
+  isBusy: boolean;
   onStartBroadcast: () => void;
   onStopBroadcast: () => void;
 };
@@ -13,6 +16,9 @@ type BroadcastPageProps = {
 export function BroadcastPage({
   isBroadcasting,
   liveFeed,
+  nextBroadcast,
+  statusMessage,
+  isBusy,
   onStartBroadcast,
   onStopBroadcast,
 }: BroadcastPageProps) {
@@ -27,19 +33,20 @@ export function BroadcastPage({
 
       <View className="mt-6 rounded-[20px] border border-[#DCE3F5] bg-[#ECF1FF] px-5 py-5">
         <Text className="font-inter-semibold text-[13px] text-[#314B8F]">Next Up</Text>
-        <Text className="font-inter-bold mt-2 text-[20px] text-[#11204A]">IS 4110 Capstone</Text>
-        <Text className="font-inter mt-2 text-[13px] text-[#5A6B8E]">9:00 AM - 10:30 AM</Text>
-        <Text className="font-inter mt-1 text-[13px] text-[#5A6B8E]">Engineering A-03</Text>
-        <Text className="font-inter mt-1 text-[13px] text-[#5A6B8E]">36 students enrolled</Text>
+        <Text className="font-inter-bold mt-2 text-[20px] text-[#11204A]">{nextBroadcast.title}</Text>
+        <Text className="font-inter mt-2 text-[13px] text-[#5A6B8E]">{nextBroadcast.time}</Text>
+        <Text className="font-inter mt-1 text-[13px] text-[#5A6B8E]">{nextBroadcast.room}</Text>
+        <Text className="font-inter mt-1 text-[13px] text-[#5A6B8E]">{nextBroadcast.enrolledText}</Text>
       </View>
 
       <View className="mt-10 items-center">
         <Pressable
+          disabled={isBusy}
           className={`h-52 w-52 items-center justify-center rounded-full ${isBroadcasting ? 'bg-[#E44141]' : 'bg-[#3F5EEA]'}`}
           onPress={isBroadcasting ? onStopBroadcast : onStartBroadcast}>
           <Ionicons name={isBroadcasting ? 'stop' : 'play'} size={56} color="#FFFFFF" />
           <Text className="font-inter-bold mt-2 text-[28px] text-white">
-            {isBroadcasting ? 'STOP' : 'START'}
+            {isBusy ? '...' : isBroadcasting ? 'STOP' : 'START'}
           </Text>
         </Pressable>
         <Text className="font-inter mt-4 text-[13px] text-[#5F6D86]">
@@ -47,6 +54,9 @@ export function BroadcastPage({
             ? 'Broadcast active. Tap to finalize session attendance.'
             : 'Tap start to activate Bluetooth broadcasting.'}
         </Text>
+        {!!statusMessage && (
+          <Text className="font-inter mt-2 text-center text-[12px] text-[#5A6882]">{statusMessage}</Text>
+        )}
       </View>
 
       {isBroadcasting && (
