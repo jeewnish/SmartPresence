@@ -10,7 +10,8 @@ npm-debug.*
 *.orig.*
 web-build/
 
-
+AGENT.md
+.env.example
 
 
 ios

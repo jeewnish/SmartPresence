@@ -3,3 +3,84 @@
 @import 'tailwindcss/utilities.css';
 
 @import 'nativewind/theme';
+
+@theme {
+  --font-sans: 'Inter-Regular';
+  --font-inter: 'Inter-Regular';
+  --font-inter-medium: 'Inter-Medium';
+  --font-inter-semibold: 'Inter-SemiBold';
+  --font-inter-bold: 'Inter-Bold';
+
+  --color-blue: #1a53b6;
+  --color-teal: #1dba8c;
+  --color-light-blue: #4f9df0;
+  --color-mint: #a8e6cf;
+
+  --color-success: #1dba8c;
+  --color-warning: #f2b90b;
+  --color-error: #d9534f;
+  --color-info: #4f9df0;
+  --color-tracking: #77dd77;
+
+  --color-text-primary: #0f2a4a;
+  --color-text-secondary: #5f7a8a;
+  --color-border: #d1e1e6;
+  --color-surface: #f4f7f8;
+  --color-background: #ffffff;
+}
+
+@utility app-bg {
+  @apply bg-background;
+}
+
+@utility h1 {
+  @apply font-inter-bold text-[30px] leading-[36px] text-text-primary;
+}
+
+@utility h2 {
+  @apply font-inter-semibold text-[22px] leading-[29px] text-text-primary;
+}
+
+@utility h3 {
+  @apply font-inter-semibold text-[18px] leading-[23px] text-text-primary;
+}
+
+@utility h4 {
+  @apply font-inter-medium text-[15px] leading-[21px] text-text-primary;
+}
+
+@utility body-lg {
+  @apply font-inter text-[15px] leading-[24px] text-text-primary;
+}
+
+@utility body-md {
+  @apply font-inter text-[14px] leading-[22px] text-text-primary;
+}
+
+@utility body-sm {
+  @apply font-inter text-[13px] leading-[21px] text-text-primary;
+}
+
+@utility caption {
+  @apply font-inter text-[11px] leading-[15px] text-text-secondary;
+}
+
+@utility card {
+  @apply rounded-[24px] border border-border bg-background;
+}
+
+@utility card-muted {
+  @apply rounded-[24px] border border-border bg-surface;
+}
+
+@utility btn-primary {
+  @apply rounded-[20px] bg-blue px-6 py-4;
+}
+
+@utility btn-disabled {
+  @apply rounded-[20px] bg-light-blue px-6 py-4;
+}
+
+@utility input {
+  @apply rounded-[20px] border border-border bg-background px-5 py-4;
+}
