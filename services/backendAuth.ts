@@ -22,7 +22,7 @@ export async function registerUserWithBackend(payload: RegisterUserPayload): Pro
     });
   } catch {
     throw new Error(
-      'Unable to reach backend registration service. Check backend URL or ngrok configuration.'
+      'Unable to reach backend registration service. Check backend URL configuration.'
     );
   }
 

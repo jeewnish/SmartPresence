@@ -10,7 +10,7 @@ const webOrigin = (globalThis as { location?: { origin?: string } }).location?.o
 export const keycloakConfig = {
   scheme: process.env.EXPO_PUBLIC_KEYCLOAK_SCHEME ?? 'http',
   host: process.env.EXPO_PUBLIC_KEYCLOAK_HOST ?? defaultHost ?? 'localhost',
-  port: process.env.EXPO_PUBLIC_KEYCLOAK_PORT ?? '8180',
+  port: process.env.EXPO_PUBLIC_KEYCLOAK_PORT ?? '8580',
   realm: process.env.EXPO_PUBLIC_KEYCLOAK_REALM ?? 'smartpresence',
   clientId: process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID ?? 'smartpresence-app',
   redirectUri:
