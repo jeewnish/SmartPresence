@@ -27,9 +27,16 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_DB: dev-file
+<<<<<<< HEAD
       KC_HTTP_PORT: 8580
+=======
+      KC_HTTP_PORT: 8180
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+>>>>>>> 5f8f3ebd62be5b7a1b87dbae4f14ba52b733b811
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: "true"
     ports:
       - "8580:8580"
@@ -94,6 +101,26 @@ services:
       - "3000:3000"
     volumes:
       - ../dashboard:/app
+
+  localtunnel-keycloak:
+    image: node:20-alpine
+    container_name: smartpresence-localtunnel-keycloak
+    restart: unless-stopped
+    profiles: ["tunnel"]
+    depends_on:
+      - keycloak
+    command: >
+      sh -c "npx --yes localtunnel --port 8180 --local-host keycloak --subdomain ${LT_KEYCLOAK_SUBDOMAIN:-smartpresence-auth}"
+
+  localtunnel-api:
+    image: node:20-alpine
+    container_name: smartpresence-localtunnel-api
+    restart: unless-stopped
+    profiles: ["tunnel"]
+    depends_on:
+      - app
+    command: >
+      sh -c "npx --yes localtunnel --port 8080 --local-host app --subdomain ${LT_API_SUBDOMAIN:-smartpresence-api}"
 
 volumes:
   postgres_data:
