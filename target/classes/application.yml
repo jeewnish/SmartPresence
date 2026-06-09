@@ -48,7 +48,7 @@ spring:
         jwt:
           # Keycloak realm issuer URI — Spring auto-discovers JWKS from /.well-known/openid-configuration
           # Alternatively you can pin the JWKS URI directly:
-          jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://localhost:8180/realms/smartpresence/protocol/openid-connect/certs}
+          jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://localhost:8580/realms/smartpresence/protocol/openid-connect/certs}
       client:
         registration:
           # Used by Swagger UI to run Authorization Code + PKCE flow in browser
@@ -61,10 +61,10 @@ spring:
             redirect-uri: "{baseUrl}/swagger-ui/oauth2-redirect.html"
         provider:
           keycloak:
-            authorization-uri: ${KEYCLOAK_AUTHORIZATION_URI:http://localhost:8180/realms/smartpresence/protocol/openid-connect/auth}
-            token-uri: ${KEYCLOAK_TOKEN_URI:http://localhost:8180/realms/smartpresence/protocol/openid-connect/token}
-            jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://localhost:8180/realms/smartpresence/protocol/openid-connect/certs}
-            user-info-uri: ${KEYCLOAK_USER_INFO_URI:http://localhost:8180/realms/smartpresence/protocol/openid-connect/userinfo}
+            authorization-uri: ${KEYCLOAK_AUTHORIZATION_URI:http://localhost:8580/realms/smartpresence/protocol/openid-connect/auth}
+            token-uri: ${KEYCLOAK_TOKEN_URI:http://localhost:8580/realms/smartpresence/protocol/openid-connect/token}
+            jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://localhost:8580/realms/smartpresence/protocol/openid-connect/certs}
+            user-info-uri: ${KEYCLOAK_USER_INFO_URI:http://localhost:8580/realms/smartpresence/protocol/openid-connect/userinfo}
             user-name-attribute: preferred_username
 
   # ── WebSocket ────────────────────────────────────────────────────────────────

@@ -39,7 +39,7 @@ public class KeycloakAdminService {
     private final UserRepository             userRepository;
     private final BiometricProfileRepository biometricRepo;
 
-    @Value("${KEYCLOAK_ADMIN_URL:http://localhost:8180}")
+    @Value("${KEYCLOAK_ADMIN_URL:http://localhost:8580}")
     private String keycloakUrl;
 
     @Value("${KEYCLOAK_REALM:smartpresence}")

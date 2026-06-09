@@ -1,4 +1,3 @@
-version: "3.9"
 services:
 
   postgres:
@@ -14,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U smartpresence_user -d smartpresence"]
+      test: [ "CMD-SHELL", "pg_isready -U smartpresence_user -d smartpresence" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,12 +27,12 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_DB: dev-file
-      KC_HTTP_PORT: 8180
+      KC_HTTP_PORT: 8580
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
     ports:
-      - "8180:8180"
+      - "8580:8580"
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
       - keycloak_data:/opt/keycloak/data
@@ -44,10 +43,9 @@ services:
     image: axllent/mailpit:latest
     container_name: smartpresence-mailpit
     ports:
-      - "1025:1025" 
-      - "8025:8025" 
+      - "1025:1025"
+      - "8025:8025"
     restart: unless-stopped
-    # Removed the empty 'volumes:' line here to fix the array error
 
   app:
     build:
@@ -64,14 +62,15 @@ services:
       DB_USERNAME: smartpresence_user
       DB_PASSWORD: ${DB_PASSWORD:-Dev@Pass123}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smartpresence
-      KEYCLOAK_ISSUER_URI: http://keycloak:8180/realms/smartpresence
-      KEYCLOAK_JWKS_URI: http://keycloak:8180/realms/smartpresence/protocol/openid-connect/certs
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-http://keycloak:8580/realms/smartpresence}
+      KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8580/realms/smartpresence/protocol/openid-connect/certs}
       KEYCLOAK_ADMIN_CLIENT_ID: smartpresence-admin-cli
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-smartpresence-admin-secret}
       KEYCLOAK_REALM: smartpresence
-      KEYCLOAK_ADMIN_URL: http://keycloak:8180
+      KEYCLOAK_ADMIN_URL: ${KEYCLOAK_ADMIN_URL:-http://keycloak:8580}
       BEACON_API_KEY: ${BEACON_API_KEY:-dev-beacon-key-change-in-prod}
       SPRING_PROFILES_ACTIVE: docker
+      SERVER_SERVLET_CONTEXT_PATH: /api/v1
     ports:
       - "8080:8080"
     volumes:
@@ -86,13 +85,13 @@ services:
       - app
       - keycloak
     environment:
-      BACKEND_URL: http://app:8080
-      KEYCLOAK_URL: http://keycloak:8180
+      BACKEND_URL: ${BACKEND_URL:-http://app:8080}
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://keycloak:8580}
       VITE_KEYCLOAK_REALM: smartpresence
       VITE_KEYCLOAK_CLIENT_ID: smartpresence-backend
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
     ports:
-      - "5173:5173"
+      - "3000:3000"
     volumes:
       - ../dashboard:/app
 

@@ -26,8 +26,8 @@ import org.springframework.context.annotation.Configuration;
         type = SecuritySchemeType.OAUTH2,
         flows = @OAuthFlows(
                 authorizationCode = @OAuthFlow(
-                        authorizationUrl = "${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/smartpresence}/protocol/openid-connect/auth",
-                        tokenUrl         = "${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/smartpresence}/protocol/openid-connect/token",
+                        authorizationUrl = "${KEYCLOAK_ISSUER_URI:http://localhost:8580/realms/smartpresence}/protocol/openid-connect/auth",
+                        tokenUrl         = "${KEYCLOAK_ISSUER_URI:http://localhost:8580/realms/smartpresence}/protocol/openid-connect/token",
                         scopes = {
                                 @OAuthScope(name = "openid",  description = "OpenID Connect"),
                                 @OAuthScope(name = "profile", description = "User profile"),
@@ -39,7 +39,7 @@ import org.springframework.context.annotation.Configuration;
 )
 public class OpenApiConfig {
 
-    @Value("${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/smartpresence}")
+    @Value("${KEYCLOAK_ISSUER_URI:http://localhost:8580/realms/smartpresence}")
     private String issuerUri;
 
     @Bean

@@ -111,7 +111,7 @@ FROM (VALUES
   ('22CIS0272', 'Chamindu',  'Sandeepa',    'sandeepa@student.susl.lk',    'CIS', 2022, TRUE),
   ('22CIS0273', 'Pasan',     'Denuwan',     'denuwan@student.susl.lk',     'CIS', 2022, TRUE),
   ('22CIS0276', 'Chamika',   'Nilaweera',   'nilaweera@student.susl.lk',   'CIS', 2022, TRUE),
-  ('22CIS0279', 'Jeewan',    'Ekanayaka',   'ekanayaka@student.susl.lk',   'CIS', 2022, TRUE),
+  ('22CIS0279', 'Jeew',    'Ekanayaka',   'ekanayaka@student.susl.lk',   'CIS', 2022, TRUE),
   ('22CIS0299', 'Isuri',     'Keshani',     'keshani@student.susl.lk',     'CIS', 2022, TRUE),
   ('22CIS0301', 'Malith',    'Gunawardena', 'malith@student.susl.lk',      'CIS', 2022, TRUE),
   ('22CIS0315', 'Sachini',   'Perera',      'sachini@student.susl.lk',     'CIS', 2022, TRUE),
