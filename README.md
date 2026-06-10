@@ -80,16 +80,22 @@ If your domain is NOT in Route 53, copy the `name_servers` output and update you
 
 ### 2. Deploy Backend to EC2
 
+**From your local machine (in the `AWS/` directory):**
+
 ```bash
+# Copy your backend project files to EC2
+scp -i "G:/Uni/Capstone/for_edits/AWS/smartpresence-dev.pem" -r ../backend ubuntu@13.207.222.135:/home/ubuntu/smartpresence/backend
+
+# Copy Keycloak realm export to EC2
+scp -i "G:/Uni/Capstone/for_edits/AWS/smartpresence-dev.pem" -r ../backend/keycloak ubuntu@13.207.222.135:/home/ubuntu/smartpresence/keycloak
+
 # SSH into the server
-ssh -i your-key.pem ubuntu@$(terraform output -raw ec2_public_ip)
+ssh -i "G:/Uni/Capstone/for_edits/AWS/smartpresence-dev.pem" ubuntu@13.207.222.135
+```
 
-# Copy your backend project files
-scp -i your-key.pem -r ../backend ubuntu@<EC2-IP>:/home/ubuntu/smartpresence/backend
+**Once inside the EC2 instance:**
 
-# Copy Keycloak realm export
-scp -i your-key.pem -r ../backend/keycloak ubuntu@<EC2-IP>:/home/ubuntu/smartpresence/keycloak
-
+```bash
 # Start services
 cd /home/ubuntu/smartpresence
 docker compose up -d
@@ -119,11 +125,11 @@ aws cloudfront create-invalidation \
 Update your mobile app config to use the new URLs:
 ```typescript
 export const CONFIG = {
-  API_BASE_URL: 'https://api.yourdomain.com/api/v1',
-  KEYCLOAK_URL: 'https://auth.yourdomain.com',
+  API_BASE_URL: 'https://api.smartpresence.dev/api/v1',
+  KEYCLOAK_URL: 'https://auth.smartpresence.dev',
   KEYCLOAK_REALM: 'smartpresence',
   KEYCLOAK_CLIENT_ID: 'smartpresence-app',
-  WS_URL: 'wss://api.yourdomain.com/api/v1/ws',
+  WS_URL: 'wss://api.smartpresence.dev/api/v1/ws',
 };
 ```
 
