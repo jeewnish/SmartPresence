@@ -1,6 +1,5 @@
 package com.smartpresence.ble.scheduler;
 
-import com.smartpresence.ble.beacon.BeaconMonitorService;
 import com.smartpresence.ble.broadcast.BleBroadcastService;
 import com.smartpresence.entity.Session;
 import com.smartpresence.repository.SessionRepository;
@@ -23,9 +22,13 @@ import java.util.List;
  *     60 seconds of expiry, rotates it automatically so the
  *     lecturer app always has a valid token to broadcast.
  *
- *  2. beaconHealthCheck  — runs every 60 seconds.
- *     Delegates to BeaconMonitorService to mark any beacon
- *     OFFLINE if no heartbeat has arrived in the last 120 seconds.
+ *  2. staleSessionCleanupTask — runs every 5 minutes.
+ *     Auto-ends sessions that have overrun their scheduled duration
+ *     by more than 30 minutes (safety net for forgotten sessions).
+ *
+ * NOTE: Physical BLE hardware beacon health checks have been removed.
+ * The system operates phone-to-phone: the lecturer's phone advertises
+ * the BLE token and students scan it directly.
  */
 @Slf4j
 @Component
@@ -34,7 +37,6 @@ public class BleTokenRefreshScheduler {
 
     private final SessionRepository      sessionRepository;
     private final BleBroadcastService    broadcastService;
-    private final BeaconMonitorService   beaconMonitorService;
     private final SystemSettingService   settingService;
 
     /** Rotate tokens that are within 60 s of expiry — every 60 s */
@@ -51,16 +53,6 @@ public class BleTokenRefreshScheduler {
             } catch (Exception e) {
                 log.error("Token rotation failed for session={}: {}", session.getSessionId(), e.getMessage());
             }
-        }
-    }
-
-    /** Mark beacons offline if no heartbeat in 120 s — every 60 s */
-    @Scheduled(fixedDelay = 60_000, initialDelay = 30_000)
-    public void beaconHealthCheckTask() {
-        try {
-            beaconMonitorService.markOfflineIfStale(120);
-        } catch (Exception e) {
-            log.error("Beacon health check failed: {}", e.getMessage());
         }
     }
 

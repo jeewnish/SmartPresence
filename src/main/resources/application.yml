@@ -93,9 +93,6 @@ app:
   attendance:
     late-grace-minutes: 15
 
-  beacon:
-    stale-after-seconds: 120      # Mark beacon OFFLINE after 2 min of silence
-    api-key: ${BEACON_API_KEY:sp-beacon-key-change-in-prod}
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 logging:

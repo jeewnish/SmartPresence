@@ -14,34 +14,36 @@ import java.time.OffsetDateTime;
 /**
  * Validates every BLE signal received during a student check-in.
  *
- * Checks performed (in order):
- *  1. Token format and session lookup
- *  2. Token expiry
- *  3. RSSI threshold (is the student physically in the room?)
- *  4. Distance estimation cross-check (log-distance path-loss model)
- *  5. Signal consistency (multi-sample variance guard)
+ * The BLE token is broadcast by the lecturer's phone — no physical
+ * hardware beacon is involved. The student's phone scans and picks
+ * up the token, then submits it along with the measured RSSI.
  *
- * All raw signal data is written to ble_checkin_events regardless of outcome
- * so that forensic analysis is always available.
+ * Checks performed (in order):
+ *  1. Token match against the active session token
+ *  2. Token expiry
+ *  3. RSSI threshold (is the student physically close to the lecturer?)
+ *  4. Distance estimation cross-check (log-distance path-loss model)
+ *
+ * All raw signal data is written to ble_checkin_events regardless of
+ * outcome so that forensic analysis is always available.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class BleCheckinValidator {
 
-    private final BeaconStatusLogRepository  beaconStatusRepo;
     private final BleCheckinEventRepository  bleCheckinEventRepo;
     private final SystemSettingService       settingService;
 
     /**
-     * Path-loss exponent n — empirically tuned for indoor office environments.
+     * Path-loss exponent n — empirically tuned for indoor environments.
      * Typically 2.0 (free space) to 4.0 (heavy obstruction).
      */
     private static final double PATH_LOSS_EXPONENT = 2.7;
 
     /**
      * RSSI at 1 metre reference distance (dBm).
-     * Calibrated for a typical BLE beacon at 0 dBm TX power.
+     * Calibrated for a typical phone BLE advertisement at 0 dBm TX power.
      */
     private static final double RSSI_AT_1M = -59.0;
 
@@ -82,17 +84,6 @@ public class BleCheckinValidator {
                     distEst, rssiDbm, threshold);
         }
 
-        // ── 4. Beacon health check (warn only — don't block a real student) ───
-        if (venue != null) {
-            beaconStatusRepo.findByVenueVenueId(venue.getVenueId())
-                    .ifPresent(s -> {
-                        if (s.getCurrentStatus() == BeaconHeartbeat.BeaconStatus.OFFLINE) {
-                            log.warn("Check-in on session={} but venue={} beacon is OFFLINE — " +
-                                    "RSSI validation degraded", session.getSessionId(), venue.getVenueCode());
-                        }
-                    });
-        }
-
         persistBleEvent(null, null, student, session, venue,
                 presentedToken, rssiDbm, rssiSamples, txPowerDbm,
                 threshold, passedRssi, true);
@@ -101,22 +92,11 @@ public class BleCheckinValidator {
             log.warn("RSSI {} dBm below threshold {} dBm — student={} session={}",
                     rssiDbm, threshold, student.getUserId(), session.getSessionId());
             return ValidationResult.fail(FailReason.RSSI_TOO_LOW,
-                    String.format("Signal %d dBm is below required %d dBm", rssiDbm, threshold));
+                    String.format("Signal %d dBm is below required %d dBm. " +
+                            "Move closer to the lecturer.", rssiDbm, threshold));
         }
 
         return ValidationResult.pass(rssiDbm, distEst);
-    }
-
-    /** Called after the attendance record is persisted — links it to the BLE event. */
-    public void linkRecordToBleEvent(Long recordId, Integer sessionId, Integer studentId) {
-        bleCheckinEventRepo.findBySessionSessionIdOrderByCapturedAtDesc(sessionId)
-                .stream()
-                .filter(e -> e.getStudent().getUserId().equals(studentId))
-                .findFirst()
-                .ifPresent(e -> {
-                    // We'd need the record entity — simplified: mark it via a query update
-                    log.debug("BLE event linked to attendance record={}", recordId);
-                });
     }
 
     // ── Distance estimation ───────────────────────────────────────────────────
@@ -151,7 +131,6 @@ public class BleCheckinValidator {
                 .student(student)
                 .session(session)
                 .venue(venue)
-                .beaconMac(venue != null ? venue.getBeaconMac() : null)
                 .bleToken(token)
                 .rssiDbm(rssiDbm != null ? rssiDbm : (short) -99)
                 .rssiSamples(rssiSamples)
@@ -188,10 +167,9 @@ public class BleCheckinValidator {
     }
 
     public enum FailReason {
-        TOKEN_INVALID  ("BLE token is invalid or has expired."),
-        TOKEN_EXPIRED  ("BLE token has expired — session may have ended."),
-        RSSI_TOO_LOW   ("Signal too weak — move closer to the Bluetooth beacon."),
-        BEACON_OFFLINE ("Room beacon is offline — contact your lecturer.");
+        TOKEN_INVALID ("BLE token is invalid or has expired."),
+        TOKEN_EXPIRED ("BLE token has expired — session may have ended."),
+        RSSI_TOO_LOW  ("Signal too weak — move closer to the lecturer.");
 
         public final String message;
         FailReason(String m) { this.message = m; }

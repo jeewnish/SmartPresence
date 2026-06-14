@@ -1,0 +1,108 @@
+# ============================================================
+#  SmartPresence — Production Docker Compose (EC2)
+#
+#  Key differences from docker-compose.yml (dev):
+#  - No local postgres  → uses AWS RDS (set DB_ vars below)
+#  - No dashboard       → served from S3/CloudFront
+#  - No localtunnel     → real domain via ALB
+#  - No mailpit         → no dev email server
+#  - Keycloak on :8180  → matches ALB target group port
+#  - Keycloak uses postgres DB on RDS
+#
+#  Run: docker compose -f docker-compose.prod.yml up -d
+# ============================================================
+
+services:
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: smartpresence-keycloak
+    restart: unless-stopped
+    command: start --import-realm
+    environment:
+      # ── Admin ──────────────────────────────────────────────
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+
+      # ── Database (RDS PostgreSQL) ───────────────────────────
+      KC_DB: postgres
+      KC_DB_URL: ${KC_DB_URL}
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+
+      # ── Hostname / Proxy ────────────────────────────────────
+      # ALB terminates HTTPS and forwards HTTP to port 8180.
+      # KC_PROXY=edge tells Keycloak to trust X-Forwarded-* headers.
+      KC_HOSTNAME: auth.smartpresence.dev
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY: edge
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_PORT: "8180"
+
+      # ── Features ────────────────────────────────────────────
+      KC_FEATURES: token-exchange,admin-fine-grained-authz
+
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - keycloak_data:/opt/keycloak/data
+
+    ports:
+      - "8180:8180"
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8180/realms/master || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  app:
+    image: smartpresence-app:latest
+    container_name: smartpresence-app
+    restart: unless-stopped
+
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+    environment:
+      # ── Database (RDS) ──────────────────────────────────────
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+
+      # ── Keycloak ────────────────────────────────────────────
+      # ISSUER_URI / JWKS_URI use the public domain so JWT
+      # validation works from any client (mobile, dashboard).
+      KEYCLOAK_ISSUER_URI: https://auth.smartpresence.dev/realms/smartpresence
+      KEYCLOAK_JWKS_URI: https://auth.smartpresence.dev/realms/smartpresence/protocol/openid-connect/certs
+      KEYCLOAK_REALM: smartpresence
+      # Admin URL uses internal Docker network (same host → localhost)
+      KEYCLOAK_ADMIN_URL: http://localhost:8180
+      KEYCLOAK_ADMIN_CLIENT_ID: smartpresence-admin-cli
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-smartpresence-admin-secret}
+
+      # ── App ─────────────────────────────────────────────────
+      BEACON_API_KEY: ${BEACON_API_KEY:-sp-beacon-key-change-in-prod}
+      SERVER_SERVLET_CONTEXT_PATH: /api/v1
+      SPRING_PROFILES_ACTIVE: prod
+
+      # ── CORS: allow dashboard and mobile origins ─────────────
+      CORS_ALLOWED_ORIGINS: "https://dashboard.smartpresence.dev,https://auth.smartpresence.dev"
+
+    ports:
+      - "8080:8080"
+
+    volumes:
+      - app_logs:/var/log/smartpresence
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/v1/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  keycloak_data:
+  app_logs:

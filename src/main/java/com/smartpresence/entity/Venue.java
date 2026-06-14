@@ -6,8 +6,15 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
+/**
+ * A physical room or lecture hall. Each venue has an RSSI threshold
+ * that defines the proximity boundary — students must be within range
+ * of the lecturer's phone BLE advertisement to check in.
+ *
+ * No physical BLE hardware beacon is associated with venues.
+ * The lecturer's phone acts as the BLE advertiser when a session is active.
+ */
 @Entity
 @Table(name = "venues")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -33,15 +40,11 @@ public class Venue {
     @Column(name = "capacity")
     private Short capacity;
 
-    /** MAC address of the BLE beacon installed in this room e.g. "AA:BB:CC:DD:EE:FF" */
-    @Column(name = "beacon_mac", unique = true, length = 17)
-    private String beaconMac;
-
-    /** iBeacon / Eddystone UUID */
-    @Column(name = "beacon_uuid", unique = true)
-    private UUID beaconUuid;
-
-    /** RSSI threshold in dBm — defines the digital room perimeter */
+    /**
+     * RSSI threshold in dBm — defines the digital room perimeter.
+     * Students whose device reports RSSI below this value are considered
+     * outside the room and their check-in is rejected.
+     */
     @Column(name = "rssi_threshold", nullable = false)
     private Short rssiThreshold = -70;
 

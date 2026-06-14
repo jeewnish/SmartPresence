@@ -4,10 +4,17 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+/**
+ * Submitted by the student's mobile app to check in to an active session.
+ *
+ * The BLE token is obtained by scanning the lecturer's phone BLE advertisement.
+ * The student's phone captures the RSSI of that advertisement, averages multiple
+ * readings, and submits them here alongside biometric and device proof.
+ */
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class CheckinRequest {
 
-    /** BLE session token captured by student app from the lecturer's broadcast */
+    /** BLE session token captured by student app from the lecturer's phone broadcast */
     @NotBlank
     private String bleToken;
 
@@ -16,7 +23,7 @@ public class CheckinRequest {
     private String deviceFingerprint;
 
     /**
-     * Averaged RSSI value in dBm from rssiSamples readings.
+     * Averaged RSSI value in dBm from rssiSamples readings of the lecturer's phone.
      * App should collect ≥3 readings over 1–2 s and send the average.
      */
     private Short rssiDbm;
@@ -24,11 +31,8 @@ public class CheckinRequest {
     /** Number of RSSI samples averaged to produce rssiDbm */
     private Short rssiSamples;
 
-    /** TX power from the BLE advertisement packet (dBm) */
+    /** TX power from the BLE advertisement packet (dBm) — as broadcast by lecturer's phone */
     private Short txPowerDbm;
-
-    /** MAC address of the beacon the student's device detected */
-    private String detectedBeaconMac;
 
     /**
      * Result of the OS-level biometric prompt (FaceID / fingerprint).

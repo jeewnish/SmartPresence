@@ -22,10 +22,11 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allowed origins — localhost for local dev
+        // Allowed origins — localhost for local dev and production dashboard
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
-                "https://localhost:*"
+                "https://localhost:*",
+                "https://dashboard.smartpresence.dev"
         ));
 
         // Standard REST methods

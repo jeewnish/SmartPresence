@@ -49,7 +49,6 @@ public class BleSessionController {
                 .courseCode(session.getCourse().getCourseCode())
                 .courseName(session.getCourse().getCourseName())
                 .venueCode(session.getVenue() != null ? session.getVenue().getVenueCode() : null)
-                .beaconMac(session.getVenue() != null ? session.getVenue().getBeaconMac() : null)
                 .bleToken(session.getBleToken())
                 .tokenExpiresAt(session.getBleTokenExpiresAt())
                 .sessionActive(true)
@@ -98,8 +97,6 @@ public class BleSessionController {
                             .courseName(session.getCourse().getCourseName())
                             .venueCode(session.getVenue() != null
                                     ? session.getVenue().getVenueCode() : null)
-                            .beaconMac(session.getVenue() != null
-                                    ? session.getVenue().getBeaconMac() : null)
                             .bleToken(bleToken)
                             .tokenExpiresAt(session.getBleTokenExpiresAt())
                             .sessionActive(true)

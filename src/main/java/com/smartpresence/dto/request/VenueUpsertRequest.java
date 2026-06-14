@@ -21,11 +21,6 @@ public class VenueUpsertRequest {
     @Min(1) @Max(1000)
     private Short capacity;
 
-    @Size(max = 17)
-    private String beaconMac;
-
-    private String beaconUuid;
-
     @NotNull @Min(-120) @Max(-20)
     private Short rssiThreshold;
 

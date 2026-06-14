@@ -23,7 +23,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/venues")
@@ -81,15 +81,8 @@ public class VenueController {
         venue.setBuilding(blankToNull(req.getBuilding()));
         venue.setFloor(req.getFloor());
         venue.setCapacity(req.getCapacity());
-        venue.setBeaconMac(blankToNull(req.getBeaconMac()));
-        venue.setBeaconUuid(parseUuid(req.getBeaconUuid()));
         venue.setRssiThreshold(req.getRssiThreshold());
         venue.setIsActive(req.getIsActive() == null || req.getIsActive());
-    }
-
-    private UUID parseUuid(String value) {
-        String trimmed = blankToNull(value);
-        return trimmed == null ? null : UUID.fromString(trimmed);
     }
 
     private String blankToNull(String value) {

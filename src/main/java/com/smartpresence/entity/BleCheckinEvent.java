@@ -5,6 +5,13 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
+/**
+ * Fine-grained log of the BLE signal captured by the student device at the
+ * moment of check-in. The BLE signal comes from the lecturer's phone
+ * advertisement — no physical hardware beacon is involved.
+ *
+ * Used for RSSI analytics and fraud forensics.
+ */
 @Entity
 @Table(name = "ble_checkin_events")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -36,8 +43,6 @@ public class BleCheckinEvent {
     private Venue venue;
 
     // ── Raw BLE signal data from student device ───────────────────────────────
-    @Column(name = "beacon_mac", length = 17)
-    private String beaconMac;
 
     @Column(name = "ble_token", nullable = false, length = 64)
     private String bleToken;
@@ -54,7 +59,7 @@ public class BleCheckinEvent {
     @Column(name = "distance_est_m", precision = 5, scale = 2)
     private BigDecimal distanceEstM;
 
-    /** TX power value extracted from the BLE advertisement packet */
+    /** TX power value extracted from the BLE advertisement packet (lecturer's phone) */
     @Column(name = "tx_power_dbm")
     private Short txPowerDbm;
 

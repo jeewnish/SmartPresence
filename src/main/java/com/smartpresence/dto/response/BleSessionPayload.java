@@ -8,8 +8,8 @@ import java.time.OffsetDateTime;
  * rotation, and session end.
  *
  * The Lecturer App reads bleToken and begins/updates its BLE advertisement.
- * The Student App reads bleToken to know what token the beacon should be
- * broadcasting — used to verify the captured BLE signal.
+ * The Student App reads bleToken to know what token the lecturer's phone
+ * is broadcasting — used to verify the captured BLE signal.
  */
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class BleSessionPayload {
@@ -18,7 +18,6 @@ public class BleSessionPayload {
     private String         courseCode;
     private String         courseName;
     private String         venueCode;
-    private String         beaconMac;
 
     /** The current valid BLE token — null means the session has ended */
     private String         bleToken;

@@ -13,9 +13,5 @@ public interface VenueRepository extends JpaRepository<Venue, Integer> {
 
     Optional<Venue> findByVenueCode(String venueCode);
 
-    Optional<Venue> findByBeaconMac(String beaconMac);
-
-    Optional<Venue> findByBeaconUuid(java.util.UUID beaconUuid);
-
     Page<Venue> findByIsActive(Boolean isActive, Pageable pageable);
 }

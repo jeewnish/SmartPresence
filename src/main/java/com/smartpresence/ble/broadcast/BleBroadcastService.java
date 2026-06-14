@@ -154,7 +154,6 @@ public class BleBroadcastService {
                 .courseCode(session.getCourse().getCourseCode())
                 .courseName(session.getCourse().getCourseName())
                 .venueCode(session.getVenue() != null ? session.getVenue().getVenueCode() : null)
-                .beaconMac(session.getVenue() != null ? session.getVenue().getBeaconMac() : null)
                 .bleToken(newToken)
                 .tokenExpiresAt(expiresAt)
                 .sessionActive(true)

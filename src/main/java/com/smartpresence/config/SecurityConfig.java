@@ -2,7 +2,7 @@ package com.smartpresence.config;
 
 import com.smartpresence.security.OAuth2RoleConverter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -39,8 +39,6 @@ public class SecurityConfig {
 
     private final OAuth2RoleConverter roleConverter;
 
-    @Value("${app.beacon.api-key}")
-    private String beaconApiKey;
 
     // ── JWT converter: validates token + extracts roles ───────────────────────
 
@@ -79,17 +77,12 @@ public class SecurityConfig {
                         // WebSocket handshake (SockJS + native)
                         .requestMatchers("/ws/**", "/ws").permitAll()
 
-                        // Beacon heartbeat uses a static API key checked in the controller
-                        .requestMatchers(HttpMethod.POST, "/beacons/heartbeat").permitAll()
-
                         // ── Admin only ────────────────────────────────────────
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
                         .requestMatchers("/settings/**").hasRole("ADMIN")
                         .requestMatchers("/audit-logs/**").hasRole("ADMIN")
                         .requestMatchers("/reports/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/beacons/**").hasRole("ADMIN")
-
                         // ── Lecturer ──────────────────────────────────────────
                         .requestMatchers(HttpMethod.POST, "/sessions/start")
                                 .hasRole("LECTURER")
