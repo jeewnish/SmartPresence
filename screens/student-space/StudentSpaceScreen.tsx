@@ -296,7 +296,10 @@ export function StudentSpaceScreen({ onExit }: StudentSpaceScreenProps) {
       <BiometricVerifyModal
         visible={radarState === 'verify'}
         onVerify={() => void handleBiometricVerify()}
-        onCancel={() => setRadarState('scanning')}
+        onCancel={(errorMsg?: string) => {
+          if (errorMsg) setCheckinMessage(errorMsg);
+          setRadarState('scanning');
+        }}
       />
     </View>
   );
