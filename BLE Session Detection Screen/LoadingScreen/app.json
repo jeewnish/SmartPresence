@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "SmartPresence",
+    "slug": "smart-presence",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "backgroundColor": "#04040F",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#04040F"
+      },
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "plugins": [
+      "expo-linear-gradient",
+      [
+        "react-native-reanimated",
+        {
+          "processNestedWorklets": true
+        }
+      ]
+    ]
+  }
+}
