@@ -4,9 +4,19 @@
     "slug": "smartpresence-mobile",
     "version": "1.0.0",
     "platforms": ["ios", "android"],
-    "android": {
-      "package": "com.anonymous.smartpresencemobile"
-    },
+   "android": {
+  "adaptiveIcon": {
+    "foregroundImage": "./assets/adaptive-icon.png",
+    "backgroundColor": "#ffffff"
+  },
+  "permissions": [
+    "android.permission.BLUETOOTH",
+    "android.permission.BLUETOOTH_ADMIN",
+    "android.permission.BLUETOOTH_SCAN",
+    "android.permission.BLUETOOTH_CONNECT",
+    "android.permission.ACCESS_FINE_LOCATION"
+  ]
+},
     "ios": {
       "bundleIdentifier": "com.chamidu.smartpresence"
     }
