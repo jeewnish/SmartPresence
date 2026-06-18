@@ -34,5 +34,4 @@ COPY --from=builder /build/target/*.jar app.jar
 # Expose the default Spring Boot port
 EXPOSE 8080
 
-# Use exec form so the JVM receives OS signals (SIGTERM) correctly
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
