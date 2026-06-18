@@ -1,0 +1,91 @@
+# ============================================================
+# SmartPresence Backend - Docker Compose
+# Services: smartpresence-api, postgres, pgadmin (optional)
+# ============================================================
+
+services:
+
+  # ── PostgreSQL 16 ──────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: smartpresence-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartpresence-network
+
+  # ── Spring Boot API ────────────────────────────────────────
+  smartpresence-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartpresence-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Datasource
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      # Flyway
+      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_FLYWAY_USER: ${POSTGRES_USER}
+      SPRING_FLYWAY_PASSWORD: ${POSTGRES_PASSWORD}
+      # JPA / Hibernate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: "false"
+      # Clerk
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
+      CLERK_JWKS_URI: ${CLERK_JWKS_URI:-https://simple-fish-72.clerk.accounts.dev/.well-known/jwks.json}
+      # Attendance token signing
+      ATTENDANCE_TOKEN_SECRET: ${ATTENDANCE_TOKEN_SECRET:-SmartPresenceAttendanceTokenSecretKeyMustBe32Chars!}
+      # Server
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    networks:
+      - smartpresence-network
+
+  # ── PgAdmin (development only — remove in production) ──────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: smartpresence-pgadmin
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@smartpresence.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - smartpresence-network
+    profiles:
+      - dev   # only starts when: docker compose --profile dev up
+
+# ── Named Volumes ──────────────────────────────────────────
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+# ── Internal Network ───────────────────────────────────────
+networks:
+  smartpresence-network:
+    driver: bridge
