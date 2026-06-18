@@ -8,6 +8,7 @@ FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /build
 
+
 # Copy Maven wrapper and pom first (layer-cache friendly)
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
