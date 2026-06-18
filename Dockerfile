@@ -12,6 +12,7 @@ WORKDIR /build
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 
+
 # Download dependencies without building the source
 RUN ./mvnw dependency:go-offline -B
 
