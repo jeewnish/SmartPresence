@@ -1,0 +1,390 @@
+import React from 'react';
+import {
+  Animated,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type Lecture = {
+  id: string;
+  code: string;
+  name: string;
+  time: string;
+};
+
+type AttendanceItem = {
+  id: string;
+  code: string;
+  label: string;
+  percentage: number;
+};
+
+// ─── Static data ─────────────────────────────────────────────────────────────
+
+const TODAY_LECTURES: Lecture[] = [
+  { id: '1', code: 'IS31000', name: 'Web application',      time: '08:00 A.M.' },
+  { id: '2', code: 'IS31002', name: 'Operation System',     time: '09:30 A.M.' },
+  { id: '3', code: 'IS31008', name: 'System Administration',time: '11:00 A.M.' },
+  { id: '4', code: 'IS31001', name: 'IS Strategies',        time: '01:30 P.M.' },
+];
+
+const ATTENDANCE: AttendanceItem[] = [
+  { id: '1', code: 'IS31000', label: 'WEB APPLICATION',  percentage: 95 },
+  { id: '2', code: 'IS31002', label: 'OPERATION SYSTEM', percentage: 90 },
+  { id: '3', code: 'IS31008', label: 'SYSTEM ADMIN',     percentage: 75 },
+  { id: '4', code: 'IS31001', label: 'IS STRATEGIES',    percentage: 45 },
+];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}/${m}/${day}`;
+}
+
+function accentColor(pct: number): string {
+  if (pct < 50) return '#D44338';
+  if (pct < 75) return '#E8871A';
+  return '#E8871A';
+}
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function LectureRow({ lecture, last }: { lecture: Lecture; last: boolean }) {
+  return (
+    <View style={[styles.lectureRow, !last && styles.lectureRowDivider]}>
+      <View style={styles.lectureBar} />
+      <Text style={styles.lectureCode} numberOfLines={1}>
+        {lecture.code}{' '}
+        <Text style={styles.lectureName}>{lecture.name}</Text>
+      </Text>
+      <Text style={styles.lectureTime}>{lecture.time}</Text>
+    </View>
+  );
+}
+
+function AttendanceCard({ item }: { item: AttendanceItem }) {
+  const color = accentColor(item.percentage);
+  const [barWidth, setBarWidth] = React.useState(0);
+
+  // Animated width for the progress bar
+  const animWidth = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (barWidth === 0) return;
+    Animated.timing(animWidth, {
+      toValue: (item.percentage / 100) * barWidth,
+      duration: 700,
+      useNativeDriver: false,
+    }).start();
+  }, [barWidth, item.percentage, animWidth]);
+
+  return (
+    <View style={styles.attendanceCard}>
+      <View style={styles.attendanceRow}>
+        <Text style={styles.attendanceLabel} numberOfLines={1}>
+          {item.code}{'  '}
+          <Text style={styles.attendanceName}>{item.label}</Text>
+        </Text>
+        <Text style={[styles.attendancePct, { color }]}>{item.percentage}%</Text>
+      </View>
+      <View
+        style={styles.progressTrack}
+        onLayout={e => setBarWidth(e.nativeEvent.layout.width)}
+      >
+        <Animated.View
+          style={[styles.progressFill, { width: animWidth, backgroundColor: color }]}
+        />
+      </View>
+    </View>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export type DashboardPageProps = {
+  studentName?: string;
+  profileImageUri?: string;
+  onViewAll?: () => void;
+};
+
+export function DashboardPage({
+  studentName = 'Nadun',
+  profileImageUri,
+  onViewAll,
+}: DashboardPageProps) {
+  const today = formatDate(new Date());
+
+  return (
+    <View style={styles.root}>
+      {/* ── Fixed Header ──────────────────────────────────────────────────── */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.helloText}>Hello</Text>
+          <Text style={styles.nameText}>{studentName}!</Text>
+        </View>
+        <View style={styles.avatarWrap}>
+          {profileImageUri ? (
+            <Image source={{ uri: profileImageUri }} style={styles.avatarImg} />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarInitial}>{studentName.charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* ── Scrollable Body ───────────────────────────────────────────────── */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Today's Lectures ─────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Today's lectures</Text>
+            <View style={styles.sectionMeta}>
+              <Text style={styles.dateText}>{today}</Text>
+              <Text style={styles.moreDotsText}>  ···</Text>
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            {TODAY_LECTURES.map((lec, idx) => (
+              <LectureRow key={lec.id} lecture={lec} last={idx === TODAY_LECTURES.length - 1} />
+            ))}
+          </View>
+        </View>
+
+        {/* Attendance Overview ───────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Attendance Overview</Text>
+            <Pressable onPress={onViewAll} android_ripple={{ color: '#FFE0B2', radius: 24 }}>
+              <Text style={styles.viewAllText}>View All</Text>
+            </Pressable>
+          </View>
+
+          {ATTENDANCE.map(item => (
+            <AttendanceCard key={item.id} item={item} />
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
+const ORANGE = '#E8871A';
+const BG     = '#FAF9F6';
+const WHITE  = '#FFFFFF';
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: BG,
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 10,
+    backgroundColor: BG,
+  },
+  helloText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 13,
+    color: '#8A8A8A',
+    lineHeight: 18,
+  },
+  nameText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 30,
+    color: '#1A1A1A',
+    lineHeight: 36,
+  },
+  avatarWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  avatarImg: {
+    width: 46,
+    height: 46,
+  },
+  avatarFallback: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#C87514',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 19,
+    color: WHITE,
+  },
+
+  // Scroll
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingTop: 4,
+    paddingBottom: 28,
+    gap: 6,
+  },
+
+  // Section
+  section: {
+    marginBottom: 10,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  sectionTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+    color: '#1A1A1A',
+  },
+  sectionMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 11,
+    color: '#AAAAAA',
+  },
+  moreDotsText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 15,
+    color: '#BBBBBB',
+    letterSpacing: 1,
+  },
+  viewAllText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 13,
+    color: ORANGE,
+  },
+
+  // Lectures card
+  card: {
+    backgroundColor: WHITE,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  lectureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+  },
+  lectureRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F3F3',
+  },
+  lectureBar: {
+    width: 3.5,
+    height: 34,
+    borderRadius: 2,
+    backgroundColor: ORANGE,
+    marginRight: 13,
+    flexShrink: 0,
+  },
+  lectureCode: {
+    flex: 1,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 13,
+    color: '#2D2D2D',
+  },
+  lectureName: {
+    fontFamily: 'Inter-Regular',
+    color: '#666666',
+  },
+  lectureTime: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: ORANGE,
+    marginLeft: 8,
+    flexShrink: 0,
+  },
+
+  // Attendance cards
+  attendanceCard: {
+    backgroundColor: WHITE,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  attendanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  attendanceLabel: {
+    flex: 1,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 11,
+    color: '#3A3A3A',
+    letterSpacing: 0.2,
+  },
+  attendanceName: {
+    fontFamily: 'Inter-SemiBold',
+    color: '#3A3A3A',
+  },
+  attendancePct: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 22,
+    lineHeight: 26,
+    marginLeft: 12,
+  },
+  progressTrack: {
+    height: 7,
+    backgroundColor: '#F0EDE6',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+});
