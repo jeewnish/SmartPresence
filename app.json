@@ -1,26 +1,27 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "SmartPresence",
+    "slug": "smartpresence",
     "version": "1.0.0",
     "orientation": "portrait",
-
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icons/radar.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jeewnish.smartpresence"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icons/radar.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.jeewnish.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,6 +30,12 @@
       "@clerk/expo",
       "expo-secure-store",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "266b578e-4f88-49f7-9a90-609d1eb8d5ba"
+      }
+    },
+    "owner": "jeewnish"
   }
 }
