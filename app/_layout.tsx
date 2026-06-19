@@ -17,6 +17,8 @@ export default function RootLayout() {
         <Stack.Screen name="attendance" />
         <Stack.Screen name="biometric" />
         <Stack.Screen name="attendance-success" />
+        <Stack.Screen name="progress" />
+        <Stack.Screen name="signup" />
       </Stack>
     </>
   );
