@@ -1,11 +1,8 @@
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Icon from "../components/Icon";
 import BottomNav from "../components/BottomNav";
-
-// Page 9 — Biometric Verification
-// Reference: Biometric Verification Screen 6.png
 
 export default function BiometricScreen() {
   const router = useRouter();
@@ -13,7 +10,7 @@ export default function BiometricScreen() {
   return (
     <View className="flex-1 bg-navy">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pb-3 pt-14">
+      <View className="flex-row items-center justify-between px-5 pt-14 pb-3">
         <Pressable onPress={() => router.back()}>
           <Icon name="arrow-left" size={20} color="#FFFFFF" />
         </Pressable>
@@ -33,15 +30,17 @@ export default function BiometricScreen() {
         </View>
       </View>
 
-      {/* Main content */}
-      <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-[24px] font-bold text-white">Biometric Verification</Text>
-        <Text className="mt-2 text-center text-[13px] text-[#5B5F73]">
-          Verify your identity to mark attendance
-        </Text>
+      {/* Title */}
+      <Text className="mt-6 text-center text-[24px] font-bold text-white">
+        Biometric Verification
+      </Text>
+      <Text className="mt-2 text-center text-[13px] text-[#5B5F73] px-6">
+        Verify your identity to mark attendance
+      </Text>
 
-        {/* Fingerprint ring */}
-        <View className="my-10 h-52 w-52 items-center justify-center">
+      {/* Fingerprint ring */}
+      <View className="flex-1 items-center justify-center">
+        <View className="h-52 w-52 items-center justify-center">
           <View className="absolute h-52 w-52 rounded-full border-2 border-brand/30" />
           <View className="absolute h-44 w-44 rounded-full border-2 border-brand/50" />
           <View className="h-36 w-36 items-center justify-center rounded-full bg-[#1A1F4A]">
@@ -50,34 +49,30 @@ export default function BiometricScreen() {
             </View>
           </View>
         </View>
+      </View>
 
-        {/* Location info */}
-        <View className="w-full gap-3">
-          <View className="flex-row items-center rounded-2xl border border-navy-border bg-[#B3AEBC]/20 px-4 py-4">
-            <View className="mr-3 h-8 w-8 items-center justify-center">
-              <Icon name="location" size={18} color="#8B8FA3" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[10px] font-bold tracking-wider text-[#8B8FA3]">CURRENT LOCATION</Text>
-              <Text className="mt-0.5 text-[14px] font-semibold text-white">Building 4, Lecture Hall B</Text>
-            </View>
-            <Ionicons name="bar-chart" size={18} color="#5B5F73" />
+      {/* Location info */}
+      <View className="px-5 gap-3">
+        <View className="flex-row items-center rounded-2xl border border-navy-border bg-[#1A1F4A] px-4 py-4">
+          <Icon name="location" size={18} color="#8B8FA3" />
+          <View className="flex-1 ml-3">
+            <Text className="text-[10px] font-bold tracking-wider text-[#8B8FA3]">CURRENT LOCATION</Text>
+            <Text className="mt-0.5 text-[14px] font-semibold text-white">Building 4, Lecture Hall B</Text>
           </View>
+          <Ionicons name="bar-chart" size={18} color="#5B5F73" />
+        </View>
 
-          <View className="flex-row items-center rounded-2xl border border-navy-border bg-[#B3AEBC]/20 px-4 py-4">
-            <View className="mr-3 h-8 w-8 items-center justify-center">
-              <Icon name="graduation-cap" size={18} color="#8B8FA3" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[10px] font-bold tracking-wider text-[#8B8FA3]">COURSE</Text>
-              <Text className="mt-0.5 text-[14px] font-semibold text-white">CS301: Advanced Data Structures</Text>
-            </View>
+        <View className="flex-row items-center rounded-2xl border border-navy-border bg-[#1A1F4A] px-4 py-4">
+          <Icon name="graduation-cap" size={18} color="#8B8FA3" />
+          <View className="flex-1 ml-3">
+            <Text className="text-[10px] font-bold tracking-wider text-[#8B8FA3]">COURSE</Text>
+            <Text className="mt-0.5 text-[14px] font-semibold text-white">CS301: Advanced Data Structures</Text>
           </View>
         </View>
       </View>
 
       {/* CTA */}
-      <View className="px-5 pb-8">
+      <View className="px-5 py-5">
         <Pressable
           onPress={() => router.push("/attendance-success")}
           className="items-center justify-center rounded-2xl bg-brand-dark py-5 active:opacity-80"

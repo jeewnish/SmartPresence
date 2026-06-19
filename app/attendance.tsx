@@ -1,11 +1,8 @@
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Icon from "../components/Icon";
 import BottomNav from "../components/BottomNav";
-
-// Page 8 — BLE Session Detection
-// Reference: BLE Session Detection Screen 5.png
 
 export default function AttendanceScreen() {
   const router = useRouter();
@@ -13,7 +10,7 @@ export default function AttendanceScreen() {
   return (
     <View className="flex-1 bg-navy">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pb-3 pt-14">
+      <View className="flex-row items-center justify-between px-5 pt-14 pb-3">
         <Pressable onPress={() => router.back()}>
           <Icon name="arrow-left" size={20} color="#FFFFFF" />
         </Pressable>
@@ -33,14 +30,14 @@ export default function AttendanceScreen() {
         </View>
       </View>
 
-      {/* Main content */}
-      <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-center text-[22px] font-bold leading-snug text-white">
-          Lecturer session detected{"\n"}nearby
-        </Text>
+      {/* Title */}
+      <Text className="mt-6 text-center text-[22px] font-bold leading-snug text-white px-6">
+        Lecturer session detected{"\n"}nearby
+      </Text>
 
-        {/* Radar animation rings */}
-        <View className="my-10 h-56 w-56 items-center justify-center">
+      {/* Radar rings */}
+      <View className="flex-1 items-center justify-center">
+        <View className="h-56 w-56 items-center justify-center">
           <View className="absolute h-56 w-56 rounded-full border border-brand/15" />
           <View className="absolute h-44 w-44 rounded-full border border-brand/25" />
           <View className="absolute h-32 w-32 rounded-full border border-brand/35" />
@@ -50,31 +47,16 @@ export default function AttendanceScreen() {
         </View>
 
         {/* Session details */}
-        <View className="items-center gap-1.5">
+        <View className="mt-8 items-center gap-1.5">
           <Text className="text-[14px] text-[#8B8FA3]">Lec Hall No - Z9</Text>
           <Text className="text-[14px] text-[#8B8FA3]">Time Period - 1400h</Text>
           <Text className="text-[14px] text-[#8B8FA3]">Code - IS10201</Text>
           <Text className="text-[14px] text-[#8B8FA3]">Subject - Web Development</Text>
         </View>
-
-        {/* Signal strength */}
-        <View className="mt-8 w-full">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-[11px] font-bold tracking-[2px] text-[#5B5F73]">SIGNAL STRENGTH</Text>
-            <Text className="text-[16px] font-bold text-brand-light">85%</Text>
-          </View>
-          <View className="mt-2 h-2 overflow-hidden rounded-full bg-navy-card">
-            <View className="h-full w-[85%] rounded-full bg-brand-dark" />
-          </View>
-          <View className="mt-2 flex-row items-center gap-1.5">
-            <Ionicons name="radio-outline" size={12} color="#5B5F73" />
-            <Text className="text-[11px] text-[#5B5F73]">Connected to Proximity Beacon</Text>
-          </View>
-        </View>
       </View>
 
       {/* CTA */}
-      <View className="px-5 pb-8">
+      <View className="px-5 pb-4">
         <Pressable
           onPress={() => router.push("/biometric")}
           className="flex-row items-center justify-center gap-2 rounded-2xl bg-brand-dark py-5 active:opacity-80"
