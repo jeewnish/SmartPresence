@@ -19,6 +19,9 @@ export default function RootLayout() {
         <Stack.Screen name="attendance-success" />
         <Stack.Screen name="progress" />
         <Stack.Screen name="signup" />
+        <Stack.Screen name="change-password" />
+        <Stack.Screen name="verification-pending" />
+        <Stack.Screen name="fingerprint-setup" />
       </Stack>
     </>
   );
