@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "SmartPresence",
+    "slug": "smartpresence-student",
+    "scheme": "smartpresence",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0B0A1F"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.smartpresence.student"
+    },
+    "android": {
+      "package": "com.smartpresence.student",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0A1F"
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
