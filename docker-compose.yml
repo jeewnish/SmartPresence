@@ -5,6 +5,7 @@
 
 services:
 
+
   # ── PostgreSQL 16 ──────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
@@ -25,6 +26,7 @@ services:
       retries: 5
     networks:
       - smartpresence-network
+
 
   # ── Spring Boot API ────────────────────────────────────────
   smartpresence-api:
@@ -80,10 +82,12 @@ services:
     profiles:
       - dev   # only starts when: docker compose --profile dev up
 
+
 # ── Named Volumes ──────────────────────────────────────────
 volumes:
   postgres_data:
   pgadmin_data:
+
 
 # ── Internal Network ───────────────────────────────────────
 networks:
