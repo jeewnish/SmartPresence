@@ -169,18 +169,18 @@ else
 fi
 
 mkdir -p -- "${MAVEN_HOME%/*}"
-
+                                                                   
 # Download and Install Apache Maven
 verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
 verbose "Downloading from: $distributionUrl"
 verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
-
+                                                                                                                                                         
 # select .zip or .tar.gz
 if ! command -v unzip >/dev/null; then
-  distributionUrl="${distributionUrl%.zip}.tar.gz"
-  distributionUrlName="${distributionUrl##*/}"
+   distributionUrl="${distributionUrl%.zip}.tar.gz"
+   distributionUrlName="${distributionUrl##*/}"
 fi
-
+                                                                                                                                                     
 # verbose opt
 __MVNW_QUIET_WGET=--quiet __MVNW_QUIET_CURL=--silent __MVNW_QUIET_UNZIP=-q __MVNW_QUIET_TAR=''
 [ "${MVNW_VERBOSE-}" != true ] || __MVNW_QUIET_WGET='' __MVNW_QUIET_CURL='' __MVNW_QUIET_UNZIP='' __MVNW_QUIET_TAR=v
@@ -189,14 +189,14 @@ __MVNW_QUIET_WGET=--quiet __MVNW_QUIET_CURL=--silent __MVNW_QUIET_UNZIP=-q __MVN
 case "${MVNW_PASSWORD:+has-password}" in
 '') MVNW_USERNAME='' MVNW_PASSWORD='' ;;
 has-password) [ -n "${MVNW_USERNAME-}" ] || MVNW_USERNAME='' MVNW_PASSWORD='' ;;
-esac
-
+esac 
+                                                                                                                                                   
 if [ -z "${MVNW_USERNAME-}" ] && command -v wget >/dev/null; then
   verbose "Found wget ... using wget"
   wget ${__MVNW_QUIET_WGET:+"$__MVNW_QUIET_WGET"} "$distributionUrl" -O "$TMP_DOWNLOAD_DIR/$distributionUrlName" || die "wget: Failed to fetch $distributionUrl"
 elif [ -z "${MVNW_USERNAME-}" ] && command -v curl >/dev/null; then
-  verbose "Found curl ... using curl"
-  curl ${__MVNW_QUIET_CURL:+"$__MVNW_QUIET_CURL"} -f -L -o "$TMP_DOWNLOAD_DIR/$distributionUrlName" "$distributionUrl" || die "curl: Failed to fetch $distributionUrl"
+   verbose "Found curl ... using curl"
+   curl ${__MVNW_QUIET_CURL:+"$__MVNW_QUIET_CURL"} -f -L -o "$TMP_DOWNLOAD_DIR/$distributionUrlName" "$distributionUrl" || die "curl: Failed to fetch $distributionUrl"
 elif set_java_home; then
   verbose "Falling back to use Java to download"
   javaSource="$TMP_DOWNLOAD_DIR/Downloader.java"
@@ -206,12 +206,12 @@ elif set_java_home; then
 	{
 	  protected java.net.PasswordAuthentication getPasswordAuthentication()
 	  {
-	    return new java.net.PasswordAuthentication( System.getenv( "MVNW_USERNAME" ), System.getenv( "MVNW_PASSWORD" ).toCharArray() );
+	     return new java.net.PasswordAuthentication( System.getenv( "MVNW_USERNAME" ), System.getenv( "MVNW_PASSWORD" ).toCharArray() );
 	  }
 	  public static void main( String[] args ) throws Exception
 	  {
-	    setDefault( new Downloader() );
-	    java.nio.file.Files.copy( java.net.URI.create( args[0] ).toURL().openStream(), java.nio.file.Paths.get( args[1] ).toAbsolutePath().normalize() );
+	     setDefault( new Downloader() );
+	     java.nio.file.Files.copy( java.net.URI.create( args[0] ).toURL().openStream(), java.nio.file.Paths.get( args[1] ).toAbsolutePath().normalize() );
 	  }
 	}
 	END
@@ -221,7 +221,7 @@ elif set_java_home; then
   verbose " - Running Downloader.java ..."
   "$(native_path "$JAVACMD")" -cp "$(native_path "$TMP_DOWNLOAD_DIR")" Downloader "$distributionUrl" "$(native_path "$targetZip")"
 fi
-
+                                                                                                                                                     
 # If specified, validate the SHA-256 sum of the Maven distribution zip file
 if [ -n "${distributionSha256Sum-}" ]; then
   distributionSha256Result=false
@@ -248,8 +248,8 @@ if [ -n "${distributionSha256Sum-}" ]; then
     exit 1
   fi
 fi
-
-# unzip and move
+                                                                                                                                   
+# unzip and move  
 if command -v unzip >/dev/null; then
   unzip ${__MVNW_QUIET_UNZIP:+"$__MVNW_QUIET_UNZIP"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -d "$TMP_DOWNLOAD_DIR" || die "failed to unzip"
 else
@@ -280,17 +280,17 @@ if [ -z "$actualDistributionDir" ]; then
   done
   set -f
 fi
-
+                                                                                                                                        
 if [ -z "$actualDistributionDir" ]; then
   verbose "Contents of $TMP_DOWNLOAD_DIR:"
   verbose "$(ls -la "$TMP_DOWNLOAD_DIR")"
   die "Could not find Maven distribution directory in extracted archive"
 fi
-
+                                                                                                                                                  
 verbose "Found extracted Maven distribution directory: $actualDistributionDir"
 printf %s\\n "$distributionUrl" >"$TMP_DOWNLOAD_DIR/$actualDistributionDir/mvnw.url"
 mv -- "$TMP_DOWNLOAD_DIR/$actualDistributionDir" "$MAVEN_HOME" || [ -d "$MAVEN_HOME" ] || die "fail to move MAVEN_HOME"
 
 clean || :
-
+                                                                                                                             
 exec_maven "$@"
