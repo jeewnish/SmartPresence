@@ -11,7 +11,7 @@ import { create } from 'zustand';
 const useUserStore = create((set) => ({
   user: null,
   role: null,
-  isLoading: true,
+  isLoading: false,
 
   setUser: (user) =>
     set({

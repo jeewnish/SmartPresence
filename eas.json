@@ -9,10 +9,18 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuc21hcnRwcmVzZW5jZS5kZXYk",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.smartpresence.dev"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuc21hcnRwcmVzZW5jZS5kZXYk",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.smartpresence.dev"
+      }
     }
   },
   "submit": {

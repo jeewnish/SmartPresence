@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import React from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import * as SecureStore from 'expo-secure-store';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import RootNavigator from './src/navigation/RootNavigator';
+import AuthNavigator from './src/navigation/AuthNavigator';
 import { Colors } from './src/theme';
 
 // ─── Clerk token cache (persists across app restarts) ─────────────────────────
@@ -37,13 +38,10 @@ const queryClient = new QueryClient({
   },
 });
 
-/**
- * Auth gate — uses useAuth() hook (must live inside ClerkProvider).
- * Shows a spinner until Clerk has loaded, then either shows the
- * main navigator (signed in) or a waiting spinner (signed out).
- */
+
 function AuthGate() {
-  const { isSignedIn, isLoaded } = useAuth();
+    const { isSignedIn, isLoaded } = useAuth();
+    console.log('Clerk state:', { isLoaded, isSignedIn });
 
   if (!isLoaded) {
     return (
@@ -54,13 +52,7 @@ function AuthGate() {
   }
 
   if (!isSignedIn) {
-    // Clerk's own UI handles sign-in; show a neutral loading state.
-    // Replace this with your own sign-in screen component when ready.
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={Colors.primaryAccent} />
-      </View>
-    );
+    return <AuthNavigator />;
   }
 
   return <RootNavigator />;
@@ -84,10 +76,15 @@ export default function App() {
       </View>
     );
   }
+  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+  if (!publishableKey) {
+    throw new Error("Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY environment variable.");
+  }
 
   return (
     <ClerkProvider
-      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      publishableKey={publishableKey}
       tokenCache={tokenCache}
     >
       <QueryClientProvider client={queryClient}>
