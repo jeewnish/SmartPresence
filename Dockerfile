@@ -1,7 +1,7 @@
-# ============================================================
+# =========================================================
 # SmartPresence Backend - Dockerfile
 # Multi-stage build: Maven build -> Java 21 runtime
-# ============================================================
+# =========================================================
 
 # ── Stage 1: Build ──────────────────────────────────────────
 FROM eclipse-temurin:21-jdk-alpine AS builder
@@ -18,6 +18,7 @@ RUN ./mvnw dependency:go-offline -B
 # Copy source and build the fat JAR (skip tests during image build)
 COPY src/ src/
 RUN ./mvnw package -DskipTests -B
+
 
 # ── Stage 2: Runtime ─────────────────────────────────────────
 FROM eclipse-temurin:21-jre-alpine AS runtime
