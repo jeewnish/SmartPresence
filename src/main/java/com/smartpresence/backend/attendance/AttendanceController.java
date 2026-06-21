@@ -13,7 +13,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/attendance")
+@RequestMapping({"/attendance", "/api/v1/attendance"})
 @RequiredArgsConstructor
 @Tag(name = "Attendance", description = "BLE-based attendance check-in flow")
 public class AttendanceController {
@@ -25,7 +25,7 @@ public class AttendanceController {
      * Step 3: Request a short-lived challenge after biometric success.
      */
     @PostMapping("/challenge")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Request attendance challenge (Student only)")
     public ResponseEntity<ChallengeResponse> challenge(
             @RequestBody @Valid ChallengeRequest request,
@@ -38,7 +38,7 @@ public class AttendanceController {
      * Step 4: Exchange challenge for a short-lived attendance JWT.
      */
     @PostMapping("/token")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Exchange challenge for attendance token (Student only)")
     public ResponseEntity<TokenResponse> token(
             @RequestBody @Valid TokenRequest request,
@@ -52,7 +52,7 @@ public class AttendanceController {
      * Runs through the full 8-step validation pipeline.
      */
     @PostMapping("/check-in")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Submit BLE attendance check-in (Student only)")
     public ResponseEntity<CheckInResponse> checkIn(
             @RequestBody @Valid CheckInRequest request,
@@ -66,7 +66,7 @@ public class AttendanceController {
      * Uses session-window-based expiry validation instead of server time.
      */
     @PostMapping("/offline-sync")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Batch offline sync of attendance records (Student only)")
     public ResponseEntity<OfflineSyncResponse> offlineSync(
             @RequestBody @Valid OfflineSyncRequest request,

@@ -26,7 +26,7 @@ public class CourseController {
     private final UserService userService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_LECTURER')")
+    @PreAuthorize("hasRole('LECTURER')")
     @Operation(summary = "Create a new course (Lecturer only)")
     public ResponseEntity<CourseResponse> create(
             @RequestBody @Valid CreateCourseRequest request,
@@ -48,7 +48,7 @@ public class CourseController {
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasRole('ROLE_LECTURER')")
+    @PreAuthorize("hasRole('LECTURER')")
     @Operation(summary = "Get my courses (Lecturer only)")
     public ResponseEntity<List<CourseResponse>> getMyCourses(@AuthenticationPrincipal Jwt jwt) {
         var lecturer = userService.requireByClerkUserId(jwt.getSubject());

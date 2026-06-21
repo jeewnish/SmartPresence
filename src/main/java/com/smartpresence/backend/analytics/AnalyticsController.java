@@ -22,7 +22,7 @@ public class AnalyticsController {
     private final UserService userService;
 
     @GetMapping("/students/me/progress")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Get my attendance progress per course (Student only)")
     public ResponseEntity<StudentProgressResponse> studentProgress(@AuthenticationPrincipal Jwt jwt) {
         var student = userService.requireByClerkUserId(jwt.getSubject());
@@ -30,7 +30,7 @@ public class AnalyticsController {
     }
 
     @GetMapping("/lecturers/history")
-    @PreAuthorize("hasRole('ROLE_LECTURER')")
+    @PreAuthorize("hasRole('LECTURER')")
     @Operation(summary = "Get session history with attendance rates (Lecturer only)")
     public ResponseEntity<LecturerHistoryResponse> lecturerHistory(@AuthenticationPrincipal Jwt jwt) {
         var lecturer = userService.requireByClerkUserId(jwt.getSubject());

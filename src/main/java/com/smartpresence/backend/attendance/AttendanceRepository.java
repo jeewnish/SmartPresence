@@ -8,6 +8,8 @@ public interface AttendanceRepository extends JpaRepository<AttendanceRecord, Lo
 
     List<AttendanceRecord> findBySessionId(Long sessionId);
 
+    List<AttendanceRecord> findByStudentIdOrderByAttendanceTimeDesc(Long studentId);
+
     boolean existsByStudentIdAndSessionId(Long studentId, Long sessionId);
 
     long countByStudentIdAndSessionCourseIdAndStatus(Long studentId, Long courseId, AttendanceStatus status);

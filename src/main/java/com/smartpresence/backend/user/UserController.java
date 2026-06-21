@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping({"/users", "/api/v1/users"})
 @RequiredArgsConstructor
 @Tag(name = "User", description = "User registration and profile")
 public class UserController {

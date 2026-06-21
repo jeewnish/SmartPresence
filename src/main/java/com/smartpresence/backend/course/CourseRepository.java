@@ -9,5 +9,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     List<Course> findByLecturer(User lecturer);
 
+    List<Course> findByLecturerOrderBySemesterAscCourseCodeAsc(User lecturer);
+
     boolean existsByCourseCode(String courseCode);
 }

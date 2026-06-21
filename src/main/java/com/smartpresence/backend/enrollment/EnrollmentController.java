@@ -26,7 +26,7 @@ public class EnrollmentController {
     private final UserService userService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Enroll in a course (Student only)")
     public ResponseEntity<EnrollmentResponse> enroll(
             @RequestBody @Valid EnrollRequest request,
@@ -36,7 +36,7 @@ public class EnrollmentController {
     }
 
     @GetMapping("/me")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Get my enrollments (Student only)")
     public ResponseEntity<List<EnrollmentResponse>> getMyEnrollments(@AuthenticationPrincipal Jwt jwt) {
         var student = userService.requireByClerkUserId(jwt.getSubject());

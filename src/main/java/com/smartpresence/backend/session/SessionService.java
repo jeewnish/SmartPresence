@@ -40,6 +40,9 @@ public class SessionService {
         if (!course.getLecturer().getId().equals(lecturer.getId())) {
             throw new IllegalArgumentException("You do not own this course");
         }
+        if (sessionRepository.existsByCourseIdAndStatus(course.getId(), SessionStatus.ACTIVE)) {
+            throw new IllegalArgumentException("This course already has an active session");
+        }
 
         String sessionSecret = UUID.randomUUID().toString().replace("-", "").toUpperCase();
 
@@ -67,7 +70,20 @@ public class SessionService {
 
         session.setStatus(SessionStatus.ENDED);
         session.setEndedAt(OffsetDateTime.now());
-        return SessionResponse.from(sessionRepository.save(session));
+        sessionRepository.save(session);
+
+        enrollmentRepository.findByCourseId(session.getCourse().getId()).stream()
+            .filter(enrollment -> !attendanceRepository.existsByStudentIdAndSessionId(
+                enrollment.getStudent().getId(), session.getId()))
+            .map(enrollment -> AttendanceRecord.builder()
+                .student(enrollment.getStudent())
+                .session(session)
+                .verificationMethod(com.smartpresence.backend.attendance.VerificationMethod.MANUAL)
+                .status(AttendanceStatus.ABSENT)
+                .build())
+            .forEach(attendanceRepository::save);
+
+        return SessionResponse.from(session);
     }
 
     @Transactional(readOnly = true)

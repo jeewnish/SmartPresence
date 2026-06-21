@@ -8,5 +8,8 @@ public interface BleCheckinRepository extends JpaRepository<BleCheckinEvent, Lon
 
     List<BleCheckinEvent> findBySessionIdOrderByCreatedAtDesc(Long sessionId);
 
+    List<BleCheckinEvent> findByStudentIdAndSessionIdOrderByCreatedAtAsc(
+        Long studentId, Long sessionId);
+
     List<BleCheckinEvent> findByStudentIdOrderByCreatedAtDesc(Long studentId);
 }

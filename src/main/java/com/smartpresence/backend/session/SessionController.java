@@ -25,7 +25,7 @@ public class SessionController {
     private final UserService userService;
 
     @PostMapping("/start")
-    @PreAuthorize("hasRole('ROLE_LECTURER')")
+    @PreAuthorize("hasRole('LECTURER')")
     @Operation(summary = "Start an attendance session (Lecturer only)")
     public ResponseEntity<SessionResponse> start(
             @RequestBody @Valid StartSessionRequest request,
@@ -35,7 +35,7 @@ public class SessionController {
     }
 
     @PostMapping("/{id}/end")
-    @PreAuthorize("hasRole('ROLE_LECTURER')")
+    @PreAuthorize("hasRole('LECTURER')")
     @Operation(summary = "End an attendance session (Lecturer only, must be session creator)")
     public ResponseEntity<SessionResponse> end(
             @PathVariable Long id,
@@ -51,7 +51,7 @@ public class SessionController {
     }
 
     @GetMapping("/{id}/roster")
-    @PreAuthorize("hasRole('ROLE_LECTURER')")
+    @PreAuthorize("hasRole('LECTURER')")
     @Operation(summary = "Get attendance roster for a session (Lecturer only, must be session creator)")
     public ResponseEntity<RosterResponse> roster(
             @PathVariable Long id,
