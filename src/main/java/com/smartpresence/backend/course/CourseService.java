@@ -3,6 +3,8 @@ package com.smartpresence.backend.course;
 import com.smartpresence.backend.course.dto.CourseResponse;
 import com.smartpresence.backend.course.dto.CreateCourseRequest;
 import com.smartpresence.backend.user.User;
+import com.smartpresence.backend.user.UserRole;
+import com.smartpresence.backend.user.AcademicDepartment;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,13 +27,32 @@ public class CourseService {
             .courseName(request.courseName())
             .lecturer(lecturer)
             .semester(request.semester())
+            .department(AcademicDepartment.fromCourseCode(request.courseCode()))
             .build();
         return CourseResponse.from(courseRepository.save(course));
     }
 
     @Transactional(readOnly = true)
     public List<CourseResponse> getAllCourses() {
-        return courseRepository.findAll().stream().map(CourseResponse::from).toList();
+        return courseRepository.findBySemesterOrderByDepartmentAscCourseCodeAsc("Semester 4")
+            .stream().map(CourseResponse::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CourseResponse> getCoursesFor(User user) {
+        if (user.getRole() != UserRole.ROLE_STUDENT) {
+            return getAllCourses();
+        }
+        if (user.getDepartment() == null) {
+            throw new IllegalArgumentException(
+                "Student account has no department. Set a valid universityId during onboarding."
+            );
+        }
+        return courseRepository.findByDepartmentAndSemesterOrderByCourseCodeAsc(
+                user.getDepartment(),
+                "Semester 4"
+            )
+            .stream().map(CourseResponse::from).toList();
     }
 
     @Transactional(readOnly = true)

@@ -23,6 +23,10 @@ public class EnrollmentService {
         var course = courseRepository.findById(request.courseId())
             .orElseThrow(() -> new ResourceNotFoundException("Course", request.courseId()));
 
+        if (student.getDepartment() == null || course.getDepartment() != student.getDepartment()) {
+            throw new IllegalArgumentException("Students may only enroll in courses from their department");
+        }
+
         if (enrollmentRepository.existsByStudentIdAndCourseId(student.getId(), request.courseId())) {
             // Return existing enrollment (idempotent)
             return enrollmentRepository.findByStudent(student).stream()
@@ -41,7 +45,7 @@ public class EnrollmentService {
 
     @Transactional(readOnly = true)
     public List<EnrollmentResponse> getMyEnrollments(User student) {
-        return enrollmentRepository.findByStudent(student)
+        return enrollmentRepository.findByStudentOrderByCourseSemesterAscCourseCourseCodeAsc(student)
             .stream()
             .map(EnrollmentResponse::from)
             .toList();

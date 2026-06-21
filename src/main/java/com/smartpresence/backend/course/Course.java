@@ -1,6 +1,7 @@
 package com.smartpresence.backend.course;
 
 import com.smartpresence.backend.user.User;
+import com.smartpresence.backend.user.AcademicDepartment;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,4 +29,8 @@ public class Course {
 
     @Column(nullable = false)
     private String semester;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "department")
+    private AcademicDepartment department;
 }

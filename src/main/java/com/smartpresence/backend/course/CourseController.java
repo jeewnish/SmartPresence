@@ -36,9 +36,10 @@ public class CourseController {
     }
 
     @GetMapping
-    @Operation(summary = "List all courses")
-    public ResponseEntity<List<CourseResponse>> getAll() {
-        return ResponseEntity.ok(courseService.getAllCourses());
+    @Operation(summary = "List the Semester 4 catalog, filtered to the student's department")
+    public ResponseEntity<List<CourseResponse>> getAll(@AuthenticationPrincipal Jwt jwt) {
+        var user = userService.requireByClerkUserId(jwt.getSubject());
+        return ResponseEntity.ok(courseService.getCoursesFor(user));
     }
 
     @GetMapping("/{id}")

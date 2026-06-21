@@ -31,6 +31,13 @@ public class User {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @Column(name = "university_id", unique = true)
+    private String universityId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "department")
+    private AcademicDepartment department;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "user_role")
     @Builder.Default
