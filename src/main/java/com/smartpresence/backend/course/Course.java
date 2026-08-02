@@ -5,6 +5,8 @@ import com.smartpresence.backend.user.AcademicDepartment;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalTime;
+
 @Entity
 @Table(name = "courses")
 @Data
@@ -33,4 +35,13 @@ public class Course {
     @Enumerated(EnumType.STRING)
     @Column(name = "department")
     private AcademicDepartment department;
+
+    @Column(name = "lecture_time")
+    private LocalTime lectureTime;
+
+    @Column(name = "venue", length = 100)
+    private String venue;
+
+    @Column(name = "class_size")
+    private Integer classSize;
 }

@@ -8,6 +8,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.DriverManager;
 import java.sql.Connection;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,13 +33,13 @@ class FlywayMigrationIT {
         .withPassword("test");
 
     @Test
-    void emptyDatabaseMigratesThroughV8WithExpectedCatalogAndAssignment() throws Exception {
+    void emptyDatabaseMigratesThroughV9WithExpectedCatalogAndAssignment() throws Exception {
         Flyway flyway = Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
             .locations("classpath:db/migration")
             .load();
 
-        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(8);
+        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(9);
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -47,7 +48,17 @@ class FlywayMigrationIT {
                 "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")) {
                 var versions = new ArrayList<String>();
                 while (rows.next()) versions.add(rows.getString(1));
-                assertThat(versions).isEqualTo(List.of("1", "2", "3", "4", "5", "6", "7", "8"));
+                assertThat(versions).isEqualTo(List.of("1", "2", "3", "4", "5", "6", "7", "8", "9"));
+            }
+
+            try (var rows = statement.executeQuery("""
+                    SELECT lecture_time, venue, class_size
+                    FROM courses WHERE course_code = 'IS2101'
+                    """)) {
+                assertThat(rows.next()).isTrue();
+                assertThat(rows.getObject("lecture_time", LocalTime.class)).isEqualTo(LocalTime.of(22, 0));
+                assertThat(rows.getString("venue")).isEqualTo("Hall B");
+                assertThat(rows.getInt("class_size")).isEqualTo(34);
             }
 
             assertThat(courseCodes(connection, "CIS")).isEqualTo(CIS_COURSES);
