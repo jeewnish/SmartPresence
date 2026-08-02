@@ -48,3 +48,8 @@ Multi-institution support
 Integration with LMS platforms
 
 (This project is developed as part of the IS 4110 Capstone Project.)
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the AWS ECS deployment and Expo EAS build
+configuration and commands.

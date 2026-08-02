@@ -5,6 +5,7 @@ import com.smartpresence.backend.attendance.AttendanceRepository;
 import com.smartpresence.backend.attendance.AttendanceStatus;
 import com.smartpresence.backend.course.Course;
 import com.smartpresence.backend.course.CourseRepository;
+import com.smartpresence.backend.course.LecturerCourseRepository;
 import com.smartpresence.backend.enrollment.Enrollment;
 import com.smartpresence.backend.enrollment.EnrollmentRepository;
 import com.smartpresence.backend.exception.ResourceNotFoundException;
@@ -30,15 +31,15 @@ public class SessionService {
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final AttendanceRepository attendanceRepository;
+    private final LecturerCourseRepository lecturerCourseRepository;
 
     @Transactional
     public SessionResponse startSession(StartSessionRequest request, User lecturer) {
         Course course = courseRepository.findById(request.courseId())
             .orElseThrow(() -> new ResourceNotFoundException("Course", request.courseId()));
 
-        // Ownership check: only the course's lecturer can start a session
-        if (!course.getLecturer().getId().equals(lecturer.getId())) {
-            throw new IllegalArgumentException("You do not own this course");
+        if (!lecturerCourseRepository.existsByLecturerIdAndCourseId(lecturer.getId(), course.getId())) {
+            throw new IllegalArgumentException("You are not assigned to this course");
         }
         if (sessionRepository.existsByCourseIdAndStatus(course.getId(), SessionStatus.ACTIVE)) {
             throw new IllegalArgumentException("This course already has an active session");

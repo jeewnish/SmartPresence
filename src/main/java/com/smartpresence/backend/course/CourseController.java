@@ -23,6 +23,7 @@ import java.util.List;
 public class CourseController {
 
     private final CourseService courseService;
+    private final LecturerCourseService lecturerCourseService;
     private final UserService userService;
 
     @PostMapping
@@ -36,7 +37,7 @@ public class CourseController {
     }
 
     @GetMapping
-    @Operation(summary = "List the Semester 4 catalog, filtered to the student's department")
+    @Operation(summary = "List the active-semester catalog, scoped to a student's department")
     public ResponseEntity<List<CourseResponse>> getAll(@AuthenticationPrincipal Jwt jwt) {
         var user = userService.requireByClerkUserId(jwt.getSubject());
         return ResponseEntity.ok(courseService.getCoursesFor(user));
@@ -54,5 +55,21 @@ public class CourseController {
     public ResponseEntity<List<CourseResponse>> getMyCourses(@AuthenticationPrincipal Jwt jwt) {
         var lecturer = userService.requireByClerkUserId(jwt.getSubject());
         return ResponseEntity.ok(courseService.getMyCourses(lecturer));
+    }
+
+    @PutMapping("/{id}/assignment")
+    @PreAuthorize("hasRole('LECTURER')")
+    @Operation(summary = "Add a catalog subject to my lecturer assignments")
+    public ResponseEntity<CourseResponse> assign(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(lecturerCourseService.assign(
+            id, userService.requireByClerkUserId(jwt.getSubject())));
+    }
+
+    @DeleteMapping("/{id}/assignment")
+    @PreAuthorize("hasRole('LECTURER')")
+    @Operation(summary = "Remove a subject from my lecturer assignments")
+    public ResponseEntity<Void> removeAssignment(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        lecturerCourseService.remove(id, userService.requireByClerkUserId(jwt.getSubject()));
+        return ResponseEntity.noContent().build();
     }
 }

@@ -14,6 +14,8 @@ public record UserResponse(
     String lastName,
     String universityId,
     AcademicDepartment department,
+    String admissionYear,
+    String studentNumber,
     UserRole role,
     OffsetDateTime createdAt
 ) {
@@ -21,7 +23,8 @@ public record UserResponse(
         return new UserResponse(
             u.getId(), u.getClerkUserId(), u.getEmail(),
             u.getFirstName(), u.getLastName(), u.getUniversityId(),
-            u.getDepartment(), u.getRole(), u.getCreatedAt()
+            u.getDepartment(), u.getAdmissionYear(), u.getStudentNumber(),
+            u.getRole(), u.getCreatedAt()
         );
     }
 }

@@ -4,7 +4,11 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-.github
+.github/*
+!.github/workflows/
+.github/workflows/*
+!.github/workflows/backend-ci.yml
+!.github/workflows/deploy.yml
 ### STS ###
 .apt_generated
 .classpath

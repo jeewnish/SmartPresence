@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "scheme": "smartpresence",
+    "name": "SmartPresence",
+    "slug": "smartpresence",
+    "version": "1.0.0",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/icons/radar.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jeewnish.smartpresence"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/radar.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.jeewnish.smartpresence"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "@clerk/expo",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow SmartPresence to access a photo you choose for your profile picture.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow SmartPresence to verify your identity before marking attendance."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "266b578e-4f88-49f7-9a90-609d1eb8d5ba"
+      }
+    },
+    "owner": "jeewnish"
+  }
+}

@@ -3,8 +3,9 @@ package com.smartpresence.backend.course;
 import com.smartpresence.backend.course.dto.CourseResponse;
 import com.smartpresence.backend.course.dto.CreateCourseRequest;
 import com.smartpresence.backend.user.User;
-import com.smartpresence.backend.user.UserRole;
 import com.smartpresence.backend.user.AcademicDepartment;
+import com.smartpresence.backend.user.UserRole;
+import com.smartpresence.backend.config.AcademicProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,8 @@ import java.util.List;
 public class CourseService {
 
     private final CourseRepository courseRepository;
+    private final LecturerCourseRepository lecturerCourseRepository;
+    private final AcademicProperties academicProperties;
 
     @Transactional
     public CourseResponse createCourse(CreateCourseRequest request, User lecturer) {
@@ -34,7 +37,7 @@ public class CourseService {
 
     @Transactional(readOnly = true)
     public List<CourseResponse> getAllCourses() {
-        return courseRepository.findBySemesterOrderByDepartmentAscCourseCodeAsc("Semester 4")
+        return courseRepository.findBySemesterOrderByDepartmentAscCourseCodeAsc(academicProperties.getActiveSemester())
             .stream().map(CourseResponse::from).toList();
     }
 
@@ -44,14 +47,10 @@ public class CourseService {
             return getAllCourses();
         }
         if (user.getDepartment() == null) {
-            throw new IllegalArgumentException(
-                "Student account has no department. Set a valid universityId during onboarding."
-            );
+            throw new IllegalArgumentException("Student account has no department. Set a valid universityId during onboarding.");
         }
         return courseRepository.findByDepartmentAndSemesterOrderByCourseCodeAsc(
-                user.getDepartment(),
-                "Semester 4"
-            )
+                user.getDepartment(), academicProperties.getActiveSemester())
             .stream().map(CourseResponse::from).toList();
     }
 
@@ -64,6 +63,7 @@ public class CourseService {
 
     @Transactional(readOnly = true)
     public List<CourseResponse> getMyCourses(User lecturer) {
-        return courseRepository.findByLecturer(lecturer).stream().map(CourseResponse::from).toList();
+        return lecturerCourseRepository.findByLecturerOrderByCourseSemesterAscCourseCourseCodeAsc(lecturer)
+            .stream().map(LecturerCourse::getCourse).map(CourseResponse::from).toList();
     }
 }

@@ -6,18 +6,21 @@ import com.smartpresence.backend.attendance.VerificationMethod;
 import com.smartpresence.backend.ble.BleCheckinRepository;
 import com.smartpresence.backend.ble.CheckinResult;
 import com.smartpresence.backend.course.CourseRepository;
+import com.smartpresence.backend.course.LecturerCourse;
+import com.smartpresence.backend.course.LecturerCourseRepository;
+import com.smartpresence.backend.config.AcademicProperties;
 import com.smartpresence.backend.enrollment.EnrollmentRepository;
 import com.smartpresence.backend.exception.ResourceNotFoundException;
 import com.smartpresence.backend.session.SessionRepository;
 import com.smartpresence.backend.session.SessionStatus;
 import com.smartpresence.backend.user.User;
+import com.smartpresence.backend.user.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 @Service
@@ -29,25 +32,26 @@ public class DemoApiService {
     private final AttendanceRepository attendanceRepository;
     private final SessionRepository sessionRepository;
     private final BleCheckinRepository bleCheckinRepository;
+    private final LecturerCourseRepository lecturerCourseRepository;
+    private final AcademicProperties academicProperties;
 
     @Transactional(readOnly = true)
     public StudentCoursesResponse studentCourses(User student) {
-        var grouped = new LinkedHashMap<String, List<CourseItem>>();
-        enrollmentRepository.findByStudentOrderByCourseSemesterAscCourseCourseCodeAsc(student)
+        if (student.getRole() != UserRole.ROLE_STUDENT || student.getDepartment() == null) {
+            throw new IllegalArgumentException(
+                "Student account has no department. Set a valid universityId during onboarding."
+            );
+        }
+
+        var courses = courseRepository
+            .findByDepartmentAndSemesterOrderByCourseCodeAsc(student.getDepartment(), academicProperties.getActiveSemester())
             .stream()
-            .collect(java.util.stream.Collectors.groupingBy(
-                enrollment -> enrollment.getCourse().getSemester(),
-                LinkedHashMap::new,
-                java.util.stream.Collectors.mapping(
-                    enrollment -> CourseItem.from(enrollment.getCourse()),
-                    java.util.stream.Collectors.toList())))
-            .forEach(grouped::put);
+            .map(CourseItem::from)
+            .toList();
 
         return new StudentCoursesResponse(
             student.getId(),
-            grouped.entrySet().stream()
-                .map(entry -> new SemesterCourses(entry.getKey(), entry.getValue()))
-                .toList());
+            List.of(new SemesterCourses(academicProperties.getActiveSemester(), courses)));
     }
 
     @Transactional(readOnly = true)
@@ -79,8 +83,9 @@ public class DemoApiService {
     public LecturerCoursesResponse lecturerCourses(User lecturer) {
         return new LecturerCoursesResponse(
             lecturer.getId(),
-            courseRepository.findByLecturerOrderBySemesterAscCourseCodeAsc(lecturer)
+            lecturerCourseRepository.findByLecturerOrderByCourseSemesterAscCourseCourseCodeAsc(lecturer)
                 .stream()
+                .map(LecturerCourse::getCourse)
                 .map(CourseItem::from)
                 .toList());
     }

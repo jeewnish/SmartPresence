@@ -8,17 +8,16 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
-
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    private final StudentIdParser studentIdParser;
 
     /**
      * Idempotent onboarding:
-     * 1. Return the row already linked to this Clerk user.
+     * 1. Refresh and return the row already linked to this Clerk user.
      * 2. Otherwise, claim a pre-provisioned/seeded row with the same verified email.
      * 3. Otherwise, create a new user for a first-time signup.
      *
@@ -29,7 +28,10 @@ public class UserService {
     @Transactional
     public UserResponse onboard(OnboardRequest request, String clerkUserId) {
         return userRepository.findByClerkUserId(clerkUserId)
-            .map(UserResponse::from)
+            .map(user -> {
+                applyUniversityIdentity(user, request);
+                return UserResponse.from(userRepository.save(user));
+            })
             .orElseGet(() -> {
                 var existingByEmail = userRepository.findByEmailIgnoreCase(request.email());
                 if (existingByEmail.isPresent()) {
@@ -39,43 +41,30 @@ public class UserService {
                     return UserResponse.from(userRepository.save(user));
                 }
 
-                UserRole role = request.role() != null ? request.role() : UserRole.ROLE_STUDENT;
-                String universityId = normalizeUniversityId(request.universityId());
-                AcademicDepartment department = role == UserRole.ROLE_STUDENT
-                    ? AcademicDepartment.fromUniversityId(universityId)
-                    : null;
-                if (role == UserRole.ROLE_STUDENT && department == null) {
-                    throw new IllegalArgumentException("universityId is required for student accounts");
-                }
                 User user = User.builder()
                     .clerkUserId(clerkUserId)
                     .email(request.email())
                     .firstName(request.firstName())
                     .lastName(request.lastName())
-                    .universityId(universityId)
-                    .department(department)
-                    .role(role)
+                    // Roles are provisioned server-side. Never allow public onboarding
+                    // to elevate a newly created account to lecturer or admin.
+                    .role(UserRole.ROLE_STUDENT)
                     .build();
+                applyUniversityIdentity(user, request);
                 return UserResponse.from(userRepository.save(user));
             });
     }
 
     private void applyUniversityIdentity(User user, OnboardRequest request) {
-        if (request.universityId() == null || request.universityId().isBlank()) {
+        if (user.getRole() != UserRole.ROLE_STUDENT) {
             return;
         }
 
-        String universityId = normalizeUniversityId(request.universityId());
-        user.setUniversityId(universityId);
-        user.setDepartment(user.getRole() == UserRole.ROLE_STUDENT
-            ? AcademicDepartment.fromUniversityId(universityId)
-            : null);
-    }
-
-    private String normalizeUniversityId(String universityId) {
-        return universityId == null || universityId.isBlank()
-            ? null
-            : universityId.trim().toLowerCase(Locale.ROOT);
+        var parsed = studentIdParser.parse(request.universityId());
+        user.setUniversityId(parsed.normalizedId());
+        user.setDepartment(parsed.department());
+        user.setAdmissionYear(parsed.admissionYear());
+        user.setStudentNumber(parsed.studentNumber());
     }
 
     @Transactional(readOnly = true)
