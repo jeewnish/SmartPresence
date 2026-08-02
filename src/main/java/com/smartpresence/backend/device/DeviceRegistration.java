@@ -3,6 +3,8 @@ package com.smartpresence.backend.device;
 import com.smartpresence.backend.user.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 
@@ -30,6 +32,7 @@ public class DeviceRegistration {
     private String deviceName;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false, columnDefinition = "platform_type")
     private PlatformType platform;
 

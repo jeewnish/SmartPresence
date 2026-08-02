@@ -15,6 +15,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/sessions")
 @RequiredArgsConstructor
@@ -48,6 +50,14 @@ public class SessionController {
     @Operation(summary = "Get session details (session secret is hidden for non-lecturers)")
     public ResponseEntity<SessionResponse> get(@PathVariable Long id) {
         return ResponseEntity.ok(sessionService.getSession(id));
+    }
+
+    @GetMapping("/active/mine")
+    @PreAuthorize("hasRole('LECTURER')")
+    @Operation(summary = "Get active sessions created by the authenticated lecturer")
+    public ResponseEntity<List<SessionResponse>> activeMine(@AuthenticationPrincipal Jwt jwt) {
+        var lecturer = userService.requireByClerkUserId(jwt.getSubject());
+        return ResponseEntity.ok(sessionService.getActiveSessions(lecturer));
     }
 
     @GetMapping("/{id}/roster")

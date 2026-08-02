@@ -1,10 +1,12 @@
 package com.smartpresence.backend.session.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.smartpresence.backend.session.AttendanceSession;
 import com.smartpresence.backend.session.SessionStatus;
 
 import java.time.OffsetDateTime;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record SessionResponse(
     Long id,
     Long courseId,

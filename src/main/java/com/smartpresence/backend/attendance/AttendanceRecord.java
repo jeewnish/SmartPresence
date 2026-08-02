@@ -4,6 +4,8 @@ import com.smartpresence.backend.session.AttendanceSession;
 import com.smartpresence.backend.user.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 
@@ -32,10 +34,12 @@ public class AttendanceRecord {
     private OffsetDateTime attendanceTime = OffsetDateTime.now();
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "verification_method", nullable = false, columnDefinition = "verification_method")
     private VerificationMethod verificationMethod;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false, columnDefinition = "attendance_status")
     @Builder.Default
     private AttendanceStatus status = AttendanceStatus.PENDING;

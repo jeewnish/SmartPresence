@@ -10,6 +10,9 @@ public interface SessionRepository extends JpaRepository<AttendanceSession, Long
 
     List<AttendanceSession> findByCreatedByOrderByStartedAtDesc(User lecturer);
 
+    List<AttendanceSession> findByCreatedByAndStatusOrderByStartedAtDesc(
+        User lecturer, SessionStatus status);
+
     Optional<AttendanceSession> findFirstByCourseIdAndStatusOrderByStartedAtDesc(
         Long courseId, SessionStatus status);
 

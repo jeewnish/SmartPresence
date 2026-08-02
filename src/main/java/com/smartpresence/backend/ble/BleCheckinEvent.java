@@ -6,6 +6,8 @@ import com.smartpresence.backend.session.AttendanceSession;
 import com.smartpresence.backend.user.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -51,6 +53,7 @@ public class BleCheckinEvent {
     private BigDecimal distanceEstimate;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false, columnDefinition = "checkin_result")
     private CheckinResult result;
 

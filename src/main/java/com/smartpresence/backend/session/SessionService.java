@@ -93,6 +93,15 @@ public class SessionService {
     }
 
     @Transactional(readOnly = true)
+    public List<SessionResponse> getActiveSessions(User lecturer) {
+        return sessionRepository
+            .findByCreatedByAndStatusOrderByStartedAtDesc(lecturer, SessionStatus.ACTIVE)
+            .stream()
+            .map(SessionResponse::from)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
     public RosterResponse getRoster(Long sessionId, User lecturer) {
         AttendanceSession session = requireSession(sessionId);
 
