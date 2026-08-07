@@ -14,6 +14,7 @@ import com.smartpresence.backend.session.dto.SessionResponse;
 import com.smartpresence.backend.session.dto.StartSessionRequest;
 import com.smartpresence.backend.user.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SessionService {
 
     private final SessionRepository sessionRepository;
@@ -54,7 +56,10 @@ public class SessionService {
             .createdBy(lecturer)
             .build();
 
-        return SessionResponse.from(sessionRepository.save(session));
+        AttendanceSession saved = sessionRepository.save(session);
+        log.info("Attendance session started: sessionId={} courseId={} secretFingerprint={}",
+            saved.getId(), course.getId(), secretFingerprint(sessionSecret));
+        return SessionResponse.from(saved);
     }
 
     @Transactional
@@ -152,5 +157,9 @@ public class SessionService {
     private AttendanceSession requireSession(Long sessionId) {
         return sessionRepository.findById(sessionId)
             .orElseThrow(() -> new ResourceNotFoundException("AttendanceSession", sessionId));
+    }
+
+    private String secretFingerprint(String secret) {
+        return String.format("%08X", secret.hashCode());
     }
 }

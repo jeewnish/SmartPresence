@@ -182,6 +182,10 @@ public class AttendanceService {
             throw e;
         }
 
+        log.info("BLE check-in validated: sessionId={} courseId={} timestamp={} token={} secretFingerprint={}",
+            ctx.getSessionId(), ctx.getSession().getCourse().getId(), ctx.getTimestamp(), ctx.getBleToken(),
+            String.format("%08X", ctx.getSession().getSessionSecret().hashCode()));
+
         // Mark attendance token JTI as used (replay prevention)
         tokenUsageRepository.save(AttendanceTokenUsage.builder()
             .tokenJti(ctx.getTokenJti())

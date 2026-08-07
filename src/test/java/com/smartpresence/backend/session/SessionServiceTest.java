@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 import java.util.List;
 import java.time.OffsetDateTime;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -115,5 +116,26 @@ class SessionServiceTest {
 
         assertThat(service.startSession(new StartSessionRequest(21L), lecturer).id()).isEqualTo(31L);
         verify(sessionRepository).existsByCourseIdAndStatus(21L, SessionStatus.ACTIVE);
+    }
+
+    @Test
+    void consecutiveAttendancePeriodsReceiveDifferentIdsAndSecrets() {
+        var lecturer = User.builder().id(10L).build();
+        var course = Course.builder().id(21L).courseCode("C2").courseName("Two").build();
+        when(courseRepository.findById(21L)).thenReturn(Optional.of(course));
+        when(lecturerCourseRepository.existsByLecturerIdAndCourseId(10L, 21L)).thenReturn(true);
+        when(sessionRepository.existsByCourseIdAndStatus(21L, SessionStatus.ACTIVE)).thenReturn(false);
+        var nextId = new AtomicLong(30L);
+        when(sessionRepository.save(org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> {
+            var session = invocation.getArgument(0, AttendanceSession.class);
+            session.setId(nextId.incrementAndGet());
+            return session;
+        });
+
+        var first = service.startSession(new StartSessionRequest(21L), lecturer);
+        var second = service.startSession(new StartSessionRequest(21L), lecturer);
+
+        assertThat(second.id()).isNotEqualTo(first.id());
+        assertThat(second.sessionSecret()).isNotEqualTo(first.sessionSecret());
     }
 }
