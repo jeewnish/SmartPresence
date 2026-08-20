@@ -184,6 +184,25 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.7.1</version>
+				<configuration>
+					<descriptors>
+						<descriptor>src/assembly/lambda.xml</descriptor>
+					</descriptors>
+					<finalName>backend</finalName>
+					<appendAssemblyId>true</appendAssemblyId>
+				</configuration>
+				<executions>
+					<execution>
+						<id>lambda-zip</id>
+						<phase>package</phase>
+						<goals><goal>single</goal></goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<executions>
 					<execution>

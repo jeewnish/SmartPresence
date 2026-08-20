@@ -4,6 +4,7 @@ import com.smartpresence.backend.security.ClerkJwtConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -22,6 +23,7 @@ import org.springframework.security.web.SecurityFilterChain;
  *     @PreAuthorize("hasRole('LECTURER')") / @PreAuthorize("hasRole('STUDENT')") work correctly.
  */
 @Configuration
+@Profile("!lambda")
 @EnableWebSecurity
 @EnableMethodSecurity          // enables @PreAuthorize / @PostAuthorize on controllers
 @RequiredArgsConstructor

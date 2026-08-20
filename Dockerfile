@@ -15,9 +15,10 @@ COPY mvnw pom.xml ./
 # Download dependencies without building the source
 RUN ./mvnw dependency:go-offline -B
 
-# Copy source and build the fat JAR (skip tests during image build)
+# Copy source and build the fat JAR. The Lambda ZIP is a separate deployment
+# artifact and is not needed in this container image.
 COPY src/ src/
-RUN ./mvnw package -DskipTests -B
+RUN ./mvnw package -DskipTests -Dassembly.skipAssembly=true -B
 
 
 # ── Stage 2: Runtime ─────────────────────────────────────────

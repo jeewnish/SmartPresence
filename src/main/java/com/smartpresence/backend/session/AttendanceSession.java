@@ -25,7 +25,7 @@ public class AttendanceSession {
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    /** UUID-based secret used to compute/verify CRC16 BLE tokens. */
+    /** UUID-verify CRC16 BLE tokens. */
     @Column(name = "session_secret", nullable = false)
     private String sessionSecret;
 
