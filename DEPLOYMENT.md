@@ -108,20 +108,17 @@ Preview builds are internally installable; the Android preview is an APK:
 ```powershell
 npm run eas:build:preview
 ```
-
 Store-ready production builds:
 
 ```powershell
 npm run eas:build:android
 npm run eas:build:ios
 ```
-
 Or build both platforms in one command:
 
 ```powershell
 npm run eas:build:all
 ```
-
 EAS will guide you through Android keystore and Apple signing credentials if
 they have not been configured. iOS builds require an Apple Developer account;
 Google Play submission requires a Play Console account.
